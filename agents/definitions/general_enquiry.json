@@ -1,0 +1,63 @@
+{
+    "agent_id": "general_enquiry_agent",
+    "name": "General Enquiry",
+    "description": "Create a general service request by collecting category, sub-category, summary and optional attachments.",
+    "service_type": "general_enquiry",
+    "keywords": [
+        "general",
+        "enquiry",
+        "request",
+        "support",
+        "help",
+        "service"
+    ],
+    "model": "gpt-4o-mini",
+    "system_prompt": "You are a general service request assistant. Extract details naturally from conversation. Do not invent values.",
+    "fields": [
+        {
+            "key": "category",
+            "type": "string",
+            "required": true,
+            "label": "Category",
+            "min_length": 2
+        },
+        {
+            "key": "subcategory",
+            "type": "string",
+            "required": true,
+            "label": "Sub-category",
+            "min_length": 2
+        },
+        {
+            "key": "summary",
+            "type": "string",
+            "required": true,
+            "label": "Summary",
+            "min_length": 10
+        },
+        {
+            "key": "attachments",
+            "type": "array",
+            "required": false,
+            "label": "Attachments"
+        }
+    ],
+    "stages": [
+        {
+            "stage_id": "DRAFT_OR_SUBMIT",
+            "label": "Fill Service Request",
+            "required_fields": [
+                "category",
+                "subcategory",
+                "summary"
+            ],
+            "required_tools": [],
+            "optional_tools": []
+        }
+    ],
+    "tools": [
+        "save_draft_general_enquiry",
+        "submit_general_enquiry",
+        "upload_documents"
+    ]
+}
