@@ -1,0 +1,164 @@
+{
+    "agent_id": "lead_enquiry_agent",
+    "name": "Lead Enquiry",
+    "description": "Collect lead details for leasing a property, validate contact info, optionally verify CR, collect documents and submit.",
+    "service_type": "lead_enquiry",
+    "keywords": [
+        "lead",
+        "lease",
+        "rent",
+        "property",
+        "unit",
+        "brand",
+        "kiosk",
+        "shop"
+    ],
+    "model": "gpt-4o-mini",
+    "system_prompt": "You are a leasing lead enquiry assistant. Extract details naturally from conversation. Do not invent values.",
+    "fields": [
+        {
+            "key": "first_name",
+            "type": "string",
+            "required": true,
+            "label": "First name",
+            "min_length": 2
+        },
+        {
+            "key": "last_name",
+            "type": "string",
+            "required": true,
+            "label": "Last name",
+            "min_length": 1
+        },
+        {
+            "key": "email",
+            "type": "string",
+            "required": true,
+            "label": "Email",
+            "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"
+        },
+        {
+            "key": "phone",
+            "type": "string",
+            "required": true,
+            "label": "Phone number",
+            "pattern": "^\\+?\\d{10,15}$"
+        },
+        {
+            "key": "company_name",
+            "type": "string",
+            "required": true,
+            "label": "Company name",
+            "min_length": 2
+        },
+        {
+            "key": "cr_number",
+            "type": "string",
+            "required": false,
+            "label": "CR number (optional)"
+        },
+        {
+            "key": "brand_name",
+            "type": "string",
+            "required": true,
+            "label": "Brand name",
+            "min_length": 2
+        },
+        {
+            "key": "brand_name_ar",
+            "type": "string",
+            "required": false,
+            "label": "Brand name (Arabic, optional)"
+        },
+        {
+            "key": "unit_type",
+            "type": "string",
+            "required": true,
+            "label": "Unit type",
+            "choices": [
+                "Kiosk",
+                "Shop",
+                "Restaurant",
+                "Office",
+                "Other"
+            ]
+        },
+        {
+            "key": "area",
+            "type": "number",
+            "required": true,
+            "label": "Preferred area (sqm)"
+        },
+        {
+            "key": "rent",
+            "type": "number",
+            "required": true,
+            "label": "Rent budget"
+        },
+        {
+            "key": "lease_period",
+            "type": "number",
+            "required": true,
+            "label": "Lease period (months)"
+        },
+        {
+            "key": "unique_property_id",
+            "type": "string",
+            "required": true,
+            "label": "Property selection ID",
+            "min_length": 4
+        },
+        {
+            "key": "documents",
+            "type": "array",
+            "required": false,
+            "label": "Uploaded documents"
+        }
+    ],
+    "stages": [
+        {
+            "stage_id": "NEW_ENQUIRY",
+            "label": "Initial Lead Submission",
+            "required_fields": [
+                "first_name",
+                "last_name",
+                "email",
+                "phone",
+                "company_name",
+                "brand_name",
+                "unit_type",
+                "area",
+                "rent",
+                "lease_period",
+                "unique_property_id"
+            ],
+            "required_tools": [
+                "verify_email_phone",
+                "create_lead_enquiry"
+            ],
+            "optional_tools": [
+                "verify_cr_number"
+            ]
+        },
+        {
+            "stage_id": "SUBMIT",
+            "label": "Document Upload",
+            "required_fields": [
+                "documents"
+            ],
+            "required_tools": [
+                "validate_documents",
+                "final_submit_lead_enquiry"
+            ],
+            "optional_tools": []
+        }
+    ],
+    "tools": [
+        "verify_email_phone",
+        "verify_cr_number",
+        "create_lead_enquiry",
+        "upload_documents",
+        "validate_documents",
+        "final_submit_lead_enquiry"
+    ]
+}
