@@ -1,8 +1,8 @@
 from typing import Dict, List, Any, Optional
 import uuid
 
-from store import ToolRegistryStore
-from schemas import (
+from src.tool_registry.store import ToolRegistryStore
+from src.tool_registry.schemas import (
     ToolBase,
     PrebuiltTool,
     CustomAPITool,
@@ -10,7 +10,7 @@ from schemas import (
 )
 
 class ToolRegistryManager:
-    def __init__(self, store: ToolRegistryStore):
+    def __init__(self, store: ToolRegistryStore = ToolRegistryStore()):
         self.store = store
         self._registry = self.store.load()
         self._tools: Dict[str, Dict[str, Any]] = {
