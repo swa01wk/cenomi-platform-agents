@@ -1,10 +1,10 @@
 {
   "agents": [
     {
-      "agent_id": "lead_enquiry_agent",
-      "name": "Lead Enquiry",
-      "description": "Collect lead details for leasing a property, validate contact info, optionally verify CR, collect documents and submit.",
-      "service_type": "lead_enquiry",
+      "agent_id": "lease_enquiry_agent",
+      "name": "Lease Enquiry",
+      "description": "Collect lease details for leasing a property, validate contact info, optionally verify CR, and submit.",
+      "service_type": "lease_enquiry",
       "keywords": [
         "lead",
         "lease",
@@ -16,7 +16,7 @@
         "shop"
       ],
       "model": "gpt-4o-mini",
-      "system_prompt": "You are a leasing lead enquiry assistant. Extract details naturally from conversation. Do not invent values.",
+      "system_prompt": "You are a leasing enquiry assistant. Extract details naturally from conversation to submit a form. Do not invent values.",
       "fields": [
         {
           "key": "first_name",
@@ -128,7 +128,7 @@
           "type": "number",
           "required": true,
           "label": "Preferred area (sqm)",
-          "hint": null,
+          "hint": "Size in square meters, not location",
           "min_length": null,
           "max_length": null,
           "pattern": null,
@@ -166,17 +166,6 @@
           "max_length": null,
           "pattern": null,
           "choices": null
-        },
-        {
-          "key": "documents",
-          "type": "array",
-          "required": false,
-          "label": "Uploaded documents",
-          "hint": null,
-          "min_length": null,
-          "max_length": null,
-          "pattern": null,
-          "choices": null
         }
       ],
       "stages": [
@@ -203,27 +192,58 @@
           "optional_tools": [
             "verify_cr_number"
           ]
-        },
-        {
-          "stage_id": "SUBMITTED",
-          "label": "Document Upload",
-          "required_fields": [
-            "documents"
-          ],
-          "required_tools": [
-            "validate_documents",
-            "final_submit_lead_enquiry"
-          ],
-          "optional_tools": []
         }
       ],
       "tools": [
         "verify_email_phone",
         "verify_cr_number",
-        "create_lead_enquiry",
-        "upload_documents",
-        "validate_documents",
-        "final_submit_lead_enquiry"
+        "create_lead_enquiry"
+      ]
+    },
+    {
+      "agent_id": "fit_out_validator",
+      "name": "Fit Out Validator",
+      "description": "Validate if the file uploaded is legitimate or not",
+      "service_type": "fit_out_validator",
+      "keywords": [
+        "file",
+        "fit",
+        "fit out"
+      ],
+      "model": "gpt-4o-mini",
+      "system_prompt": "You are a Pdf validator agent, you have to determine if the file uplaoded is legitimate or not",
+      "fields": [
+        {
+          "key": "string",
+          "type": "string",
+          "required": true,
+          "label": "string",
+          "hint": "string",
+          "min_length": 0,
+          "max_length": 0,
+          "pattern": "string",
+          "choices": [
+            "string"
+          ]
+        }
+      ],
+      "stages": [
+        {
+          "stage_id": "string",
+          "label": "string",
+          "required_fields": [
+            "string"
+          ],
+          "required_tools": [
+            "string"
+          ],
+          "optional_tools": [
+            "string"
+          ]
+        }
+      ],
+      "tools": [
+        "string"
       ]
     }
   ]

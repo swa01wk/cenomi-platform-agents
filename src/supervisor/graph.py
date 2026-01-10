@@ -8,6 +8,12 @@ from src.subagent.runner import run_subagent
 from src.registry.store import AgentRegistryStore
 from src.tools.registry import ToolRegistry
 from src.routing.intent_router import infer_intent
+from src.messages.generators import (
+    generate_greeting,
+    generate_agent_acknowledgement,
+    generate_continue_prompt,
+    generate_submission_success_message
+)
 
 import re
 
@@ -73,7 +79,8 @@ async def node_supervisor(state: AppState, registry: AgentRegistryStore) -> AppS
         # Try re-route FIRST if it looks like intent changed
         if NO_RE.search(msg) or looks_like_new_intent(msg):
             agents = await registry.alist_agents()
-            decision = await infer_intent(msg, agents)
+            conversation_history = state.get("messages", [])
+            decision = await infer_intent(msg, agents, conversation_history)
 
             # If router confidently picks a different agent -> switch
             if decision.agent_id and decision.confidence >= 0.70 and decision.agent_id != state.get("active_agent_id"):
@@ -100,9 +107,10 @@ async def node_supervisor(state: AppState, registry: AgentRegistryStore) -> AppS
     if state.get("active_agent_id"):
         msg = last_user_text(state.get("messages", [])) or ""
         agents = await registry.alist_agents()
+        conversation_history = state.get("messages", [])
 
         # allow mid-stream reroute if message strongly indicates different intent
-        decision = await infer_intent(msg, agents)
+        decision = await infer_intent(msg, agents, conversation_history)
         if decision.agent_id and decision.confidence >= 0.80 and decision.agent_id != state.get("active_agent_id"):
             state["active_agent_id"] = decision.agent_id
             state["phase"] = "collecting"
@@ -119,11 +127,13 @@ async def node_supervisor(state: AppState, registry: AgentRegistryStore) -> AppS
 
     # First turn or not routed yet: infer intent
     if not msg.strip():
-        state["assistant_message"] = "Hi! Tell me what you need help with, and I'll take care of the request."
+        greeting = await generate_greeting({"is_new_session": True})
+        state["assistant_message"] = greeting
         state["phase"] = "supervisor"
         return state
 
-    decision = await infer_intent(msg, agents)
+    conversation_history = state.get("messages", [])
+    decision = await infer_intent(msg, agents, conversation_history)
 
     # If unsure -> ask one clarifying question
     if (not decision.agent_id) or decision.confidence < 0.75:
@@ -136,9 +146,19 @@ async def node_supervisor(state: AppState, registry: AgentRegistryStore) -> AppS
     state["active_agent_id"] = decision.agent_id
     state["phase"] = "collecting"
 
-    # Natural acknowledgment
-    chosen_name = next((a["name"] for a in agents if a["agent_id"] == decision.agent_id), decision.agent_id)
-    state["assistant_message"] = f"Got it — I'll help you with **{chosen_name}**. Let's get a few details."
+    # Natural acknowledgment using LLM-generated message
+    chosen_agent = next((a for a in agents if a["agent_id"] == decision.agent_id), None)
+    if chosen_agent:
+        acknowledgement = await generate_agent_acknowledgement(
+            chosen_agent,
+            msg,
+            decision.confidence,
+            conversation_history
+        )
+        state["assistant_message"] = acknowledgement
+    else:
+        chosen_name = decision.agent_id
+        state["assistant_message"] = f"Got it — I'll help you with **{chosen_name}**. Let's get a few details."
     return state
 
 async def node_call_subagent(state: AppState, registry: AgentRegistryStore, toolreg: ToolRegistry) -> AppState:
@@ -159,6 +179,7 @@ async def node_call_subagent(state: AppState, registry: AgentRegistryStore, tool
 
     msg = last_user_text(state.get("messages", []))
     attachments = state.get("turn_attachments", []) or []
+    conversation_history = state.get("messages", [])
 
     result = await run_subagent.ainvoke({
         "agent_cfg": cfg,
@@ -166,6 +187,7 @@ async def node_call_subagent(state: AppState, registry: AgentRegistryStore, tool
         "draft": draft,
         "current_stage": current_stage,
         "attachments": attachments,
+        "conversation_history": conversation_history,
         "tool_runner": atool_runner_factory(toolreg, state),
     })
 
@@ -195,7 +217,7 @@ async def node_call_subagent(state: AppState, registry: AgentRegistryStore, tool
         state["assistant_message"] = "I've put this together. Want me to submit it, or change anything?"
     return state
 
-async def node_submit(state: AppState, toolreg: ToolRegistry) -> AppState:
+async def node_submit(state: AppState, registry: AgentRegistryStore, toolreg: ToolRegistry) -> AppState:
     msg = last_user_text(state.get("messages", []))
     if state.get("phase") != "confirm" or not YES_RE.match(msg or ""):
         state["assistant_message"] = "Not submitted."
@@ -215,10 +237,33 @@ async def node_submit(state: AppState, toolreg: ToolRegistry) -> AppState:
 
     state["submitted"] = submitted
     state["phase"] = "done"
-    if submitted.get("request_id"):
-        state["assistant_message"] = f"✅ Submitted! Request id: **{submitted['request_id']}**"
+
+    # Get agent config for personalized success message
+    active_agent_id = state.get("active_agent_id")
+    agents = await registry.alist_agents()
+    agent_config = next((a for a in agents if a["agent_id"] == active_agent_id), None)
+    conversation_history = state.get("messages", [])
+
+    if agent_config:
+        success_message = await generate_submission_success_message(
+            agent_config,
+            submitted,
+            conversation_history
+        )
+        # Add continue prompt
+        continue_message = await generate_continue_prompt(agent_config, conversation_history)
+        state["assistant_message"] = f"{success_message}\n\n{continue_message}"
     else:
-        state["assistant_message"] = f"✅ Submitted! Status: **{submitted.get('status','SUBMITTED')}**"
+        # Fallback if no agent config
+        if submitted.get("request_id"):
+            state["assistant_message"] = f"✅ Submitted! Request id: **{submitted['request_id']}**"
+        else:
+            state["assistant_message"] = f"✅ Submitted! Status: **{submitted.get('status','SUBMITTED')}**"
+
+    # Reset for new enquiry (reinitiation)
+    state["active_agent_id"] = None
+    state["phase"] = "supervisor"
+
     return state
 
 def build_supervisor_graph(registry: AgentRegistryStore, toolreg: ToolRegistry):
@@ -232,7 +277,7 @@ def build_supervisor_graph(registry: AgentRegistryStore, toolreg: ToolRegistry):
         return await node_call_subagent(s, registry, toolreg)
 
     async def submit_node(s: AppState):
-        return await node_submit(s, toolreg)
+        return await node_submit(s, registry, toolreg)
 
     g.add_node("supervisor", supervisor_node)
     g.add_node("call_subagent", call_subagent_node)

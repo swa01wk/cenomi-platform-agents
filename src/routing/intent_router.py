@@ -3,7 +3,7 @@ import asyncio
 from typing import Dict, Any, List, Optional, Literal
 from pydantic import BaseModel, Field
 from langchain_openai import ChatOpenAI
-from langchain_core.messages import SystemMessage, HumanMessage
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 
 MODEL_DEFAULT = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
@@ -25,10 +25,18 @@ def build_agents_context(agents: List[Dict[str, Any]]) -> str:
         )
     return "\n".join(lines)
 
-async def infer_intent(user_text: str, agents: List[Dict[str, Any]]) -> RouteDecision:
+async def infer_intent(
+    user_text: str,
+    agents: List[Dict[str, Any]],
+    conversation_history: Optional[List[Dict[str, str]]] = None
+) -> RouteDecision:
     llm = ChatOpenAI(model=MODEL_DEFAULT, temperature=0).with_structured_output(RouteDecision)
 
     ctx = build_agents_context(agents)
+
+    # Build context-aware system prompt
+    turn_count = len(conversation_history) if conversation_history else 0
+
     sys = f"""
 You are an intent router for a service-request chatbot.
 
@@ -43,7 +51,26 @@ Rules:
 - If user mentions generic help/request/support/category/subcategory -> general enquiry.
 - Confidence should reflect certainty (>=0.75 means you are confident).
 - clarification_question must be one short, friendly question.
+- Consider previous conversation context when detecting intent changes.
+- If user is correcting or clarifying previous statements, maintain the same intent unless explicitly changed.
+
+Conversation turn: {turn_count}
 """
 
+    # Build message chain with history
+    messages = [SystemMessage(content=sys)]
+
+    # Add recent conversation history for context (last 4 messages = 2 exchanges)
+    if conversation_history:
+        for msg in conversation_history[-4:]:
+            if msg.get("role") == "user":
+                messages.append(HumanMessage(content=msg.get("content", "")))
+            elif msg.get("role") == "assistant":
+                messages.append(AIMessage(content=msg.get("content", "")))
+
+    # Add current user message if not already in history
+    if not conversation_history or conversation_history[-1].get("content") != user_text:
+        messages.append(HumanMessage(content=user_text))
+
     async with OPENAI_SEMAPHORE:
-        return await llm.ainvoke([SystemMessage(content=sys), HumanMessage(content=user_text)])
+        return await llm.ainvoke(messages)
