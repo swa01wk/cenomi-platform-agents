@@ -32,14 +32,22 @@ def format_choices(agents: List[Dict[str, Any]]) -> str:
     return "\n".join(lines)
 
 def tool_runner(toolreg: ToolRegistry, state: AppState):
+    """Synchronous tool runner (deprecated - kept for backwards compatibility)"""
     def _run(tool_name: str, payload: Dict[str, Any]) -> Dict[str, Any]:
         tool = toolreg.get(tool_name)
         return tool(payload)
     return _run
 
-def node_supervisor(state: AppState, registry: AgentRegistryStore) -> AppState:
+def atool_runner_factory(toolreg: ToolRegistry, state: AppState):
+    """Async tool runner factory for Phase 4+"""
+    async def _run(tool_name: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+        tool = toolreg.get(tool_name)
+        return await tool(payload)
+    return _run
+
+async def node_supervisor(state: AppState, registry: AgentRegistryStore) -> AppState:
     msg = last_user_text(state.get("messages", []))
-    agents = registry.list_agents()
+    agents = await registry.alist_agents()
 
     if not agents:
         state["assistant_message"] = "No service agents are configured yet. An admin needs to create them first."
@@ -64,26 +72,26 @@ def node_supervisor(state: AppState, registry: AgentRegistryStore) -> AppState:
         # 2) If user says no / wants changes / indicates new intent:
         # Try re-route FIRST if it looks like intent changed
         if NO_RE.search(msg) or looks_like_new_intent(msg):
-            agents = registry.list_agents()
-            decision = infer_intent(msg, agents)
+            agents = await registry.alist_agents()
+            decision = await infer_intent(msg, agents)
 
             # If router confidently picks a different agent -> switch
             if decision.agent_id and decision.confidence >= 0.70 and decision.agent_id != state.get("active_agent_id"):
                 state["active_agent_id"] = decision.agent_id
                 state["phase"] = "collecting"
                 state["ready_payload"] = None  # unlock
-                # keep drafts dict, but we’ll now operate on the new agent’s draft
+                # keep drafts dict, but we'll now operate on the new agent's draft
                 chosen_name = next((a["name"] for a in agents if a["agent_id"] == decision.agent_id), decision.agent_id)
-                state["assistant_message"] = f"Got it — let’s switch to **{chosen_name}**. Tell me what you need, and I’ll collect the details."
+                state["assistant_message"] = f"Got it — let's switch to **{chosen_name}**. Tell me what you need, and I'll collect the details."
                 return state
 
             # Otherwise treat as edits to the SAME request and continue collecting
             state["phase"] = "collecting"
             state["ready_payload"] = None  # unlock so subagent can update
-            state["assistant_message"] = "No worries — tell me what you want to change (you can write it naturally), and I’ll update the request."
+            state["assistant_message"] = "No worries — tell me what you want to change (you can write it naturally), and I'll update the request."
             return state
 
-        # 3) Anything else in confirm: don’t loop the same robotic message
+        # 3) Anything else in confirm: don't loop the same robotic message
         state["assistant_message"] = "Do you want me to submit this, or update something?"
         return state
 
@@ -91,10 +99,10 @@ def node_supervisor(state: AppState, registry: AgentRegistryStore) -> AppState:
     # If we already locked an agent, continue
     if state.get("active_agent_id"):
         msg = last_user_text(state.get("messages", [])) or ""
-        agents = registry.list_agents()
+        agents = await registry.alist_agents()
 
         # allow mid-stream reroute if message strongly indicates different intent
-        decision = infer_intent(msg, agents)
+        decision = await infer_intent(msg, agents)
         if decision.agent_id and decision.confidence >= 0.80 and decision.agent_id != state.get("active_agent_id"):
             state["active_agent_id"] = decision.agent_id
             state["phase"] = "collecting"
@@ -104,18 +112,18 @@ def node_supervisor(state: AppState, registry: AgentRegistryStore) -> AppState:
             return state
 
         state["phase"] = "collecting"
-        # Don’t say “continuing” every time — it feels botty
+        # Don't say "continuing" every time — it feels botty
         state["assistant_message"] = ""
         return state
 
 
     # First turn or not routed yet: infer intent
     if not msg.strip():
-        state["assistant_message"] = "Hi! Tell me what you need help with, and I’ll take care of the request."
+        state["assistant_message"] = "Hi! Tell me what you need help with, and I'll take care of the request."
         state["phase"] = "supervisor"
         return state
 
-    decision = infer_intent(msg, agents)
+    decision = await infer_intent(msg, agents)
 
     # If unsure -> ask one clarifying question
     if (not decision.agent_id) or decision.confidence < 0.75:
@@ -130,11 +138,11 @@ def node_supervisor(state: AppState, registry: AgentRegistryStore) -> AppState:
 
     # Natural acknowledgment
     chosen_name = next((a["name"] for a in agents if a["agent_id"] == decision.agent_id), decision.agent_id)
-    state["assistant_message"] = f"Got it — I’ll help you with **{chosen_name}**. Let’s get a few details."
+    state["assistant_message"] = f"Got it — I'll help you with **{chosen_name}**. Let's get a few details."
     return state
 
-def node_call_subagent(state: AppState, registry: AgentRegistryStore, toolreg: ToolRegistry) -> AppState:
-    agents = registry.list_agents()
+async def node_call_subagent(state: AppState, registry: AgentRegistryStore, toolreg: ToolRegistry) -> AppState:
+    agents = await registry.alist_agents()
     agent_id = state.get("active_agent_id")
     cfg = next((a for a in agents if a["agent_id"] == agent_id), None)
     if not cfg:
@@ -152,13 +160,13 @@ def node_call_subagent(state: AppState, registry: AgentRegistryStore, toolreg: T
     msg = last_user_text(state.get("messages", []))
     attachments = state.get("turn_attachments", []) or []
 
-    result = run_subagent.invoke({
+    result = await run_subagent.ainvoke({
         "agent_cfg": cfg,
         "user_text": msg,
         "draft": draft,
         "current_stage": current_stage,
         "attachments": attachments,
-        "tool_runner": tool_runner(toolreg, state),
+        "tool_runner": atool_runner_factory(toolreg, state),
     })
 
     drafts[agent_id] = result.get("draft", draft)
@@ -182,12 +190,12 @@ def node_call_subagent(state: AppState, registry: AgentRegistryStore, toolreg: T
 
     preview = result.get("natural_preview")
     if preview:
-        state["assistant_message"] = preview + "\n\nIf you’d like, say **submit** to send it — or tell me what you want to change."
+        state["assistant_message"] = preview + "\n\nIf you'd like, say **submit** to send it — or tell me what you want to change."
     else:
-        state["assistant_message"] = "I’ve put this together. Want me to submit it, or change anything?"
+        state["assistant_message"] = "I've put this together. Want me to submit it, or change anything?"
     return state
 
-def node_submit(state: AppState, toolreg: ToolRegistry) -> AppState:
+async def node_submit(state: AppState, toolreg: ToolRegistry) -> AppState:
     msg = last_user_text(state.get("messages", []))
     if state.get("phase") != "confirm" or not YES_RE.match(msg or ""):
         state["assistant_message"] = "Not submitted."
@@ -200,7 +208,7 @@ def node_submit(state: AppState, toolreg: ToolRegistry) -> AppState:
 
     if service_type == "general_enquiry":
         tool = toolreg.get("submit_general_enquiry")
-        submitted = tool(payload)
+        submitted = await tool(payload)
     else:
         # Lead enquiry final submit tool already runs in stage tools; return its status + lead_id
         submitted = {"ok": True, "status": payload.get("status", "SUBMITTED"), "lead_id": payload.get("lead_id")}
@@ -215,11 +223,23 @@ def node_submit(state: AppState, toolreg: ToolRegistry) -> AppState:
 
 def build_supervisor_graph(registry: AgentRegistryStore, toolreg: ToolRegistry):
     g = StateGraph(AppState)
-    g.add_node("supervisor", lambda s: node_supervisor(s, registry))
-    g.add_node("call_subagent", lambda s: node_call_subagent(s, registry, toolreg))
-    g.add_node("submit", lambda s: node_submit(s, toolreg))
+
+    # LangGraph requires async nodes to be defined as coroutine functions
+    async def supervisor_node(s: AppState):
+        return await node_supervisor(s, registry)
+
+    async def call_subagent_node(s: AppState):
+        return await node_call_subagent(s, registry, toolreg)
+
+    async def submit_node(s: AppState):
+        return await node_submit(s, toolreg)
+
+    g.add_node("supervisor", supervisor_node)
+    g.add_node("call_subagent", call_subagent_node)
+    g.add_node("submit", submit_node)
     g.set_entry_point("supervisor")
 
+    # Conditional edges remain sync
     def after_supervisor(state: AppState):
         msg = last_user_text(state.get("messages", []))
         if state.get("phase") == "confirm" and YES_RE.match(msg or ""):

@@ -1,5 +1,6 @@
 import os
 import re
+import asyncio
 from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import Field, create_model
@@ -9,6 +10,9 @@ from langgraph.func import entrypoint, task
 from langgraph.checkpoint.memory import InMemorySaver
 
 MODEL_DEFAULT = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+
+# OpenAI rate limiting: max 5 concurrent LLM calls to prevent quota exhaustion
+OPENAI_SEMAPHORE = asyncio.Semaphore(5)
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 PHONE_RE = re.compile(r"^\+?\d{10,15}$")
@@ -118,7 +122,7 @@ def choose_issue_bundle(issues: List[Dict[str, Any]], max_items: int = 4) -> Lis
     return issues[:max_items]
 
 
-def ask_for_issues(cfg: dict, issues: List[Dict[str, Any]], stage_id: str, draft: Dict[str, Any]) -> str:
+async def ask_for_issues(cfg: dict, issues: List[Dict[str, Any]], stage_id: str, draft: Dict[str, Any]) -> str:
     """
     Make the prompt feel human while still asking for specific missing/invalid fields.
     """
@@ -131,8 +135,8 @@ def ask_for_issues(cfg: dict, issues: List[Dict[str, Any]], stage_id: str, draft
     system = (
         "You are a friendly service assistant chatting with a tenant. "
         "Be natural, short, and helpful. Ask for multiple missing items in one message. "
-        "Don’t mention internal terms like 'stage' or 'schema'. "
-        "Don’t show JSON. Use 1–2 short paragraphs. "
+        "Don't mention internal terms like 'stage' or 'schema'. "
+        "Don't show JSON. Use 1–2 short paragraphs. "
         "If documents are missing, ask them to upload/attach files."
     )
 
@@ -149,9 +153,9 @@ Write the next assistant message. It must:
 - invite the user to answer in one message (but allow partial),
 - sound natural.
 """
-    return llm_phrase(cfg.get("model"), system, user)
+    return await llm_phrase(cfg.get("model"), system, user)
 
-def summarize_draft_naturally(cfg: dict, payload: dict) -> str:
+async def summarize_draft_naturally(cfg: dict, payload: dict) -> str:
     # remove noisy keys
     filtered = {k: v for k, v in payload.items() if k not in ("agent_id",)}
     system = (
@@ -163,7 +167,7 @@ def summarize_draft_naturally(cfg: dict, payload: dict) -> str:
 Service type: {filtered.get('service_type')}
 Data: {filtered}
 """
-    return llm_phrase(cfg.get("model"), system, user)
+    return await llm_phrase(cfg.get("model"), system, user)
 
 # -----------------------------
 # Validation (the key change)
@@ -262,9 +266,10 @@ def validate_draft(cfg: Dict[str, Any], stage_id: str, draft: Dict[str, Any]) ->
                 issues.append({"key": k, "kind": "invalid", "message": "Please include country code if possible (10–15 digits)."})
     return issues
 
-def llm_phrase(model: str, system: str, user: str) -> str:
+async def llm_phrase(model: str, system: str, user: str) -> str:
     llm = ChatOpenAI(model=model or MODEL_DEFAULT, temperature=0.6)
-    out = llm.invoke([SystemMessage(content=system), HumanMessage(content=user)])
+    async with OPENAI_SEMAPHORE:
+        out = await llm.ainvoke([SystemMessage(content=system), HumanMessage(content=user)])
     return (out.content or "").strip()
 
 # -----------------------------
@@ -299,7 +304,7 @@ def build_extraction_model(cfg: Dict[str, Any]):
 
 
 @task
-def extract_fields(cfg: Dict[str, Any], user_text: str, draft: Dict[str, Any]) -> Dict[str, Any]:
+async def extract_fields(cfg: Dict[str, Any], user_text: str, draft: Dict[str, Any]) -> Dict[str, Any]:
     ExtractionModel = build_extraction_model(cfg)
     llm = ChatOpenAI(model=cfg.get("model") or MODEL_DEFAULT, temperature=0).with_structured_output(ExtractionModel)
 
@@ -314,7 +319,8 @@ def extract_fields(cfg: Dict[str, Any], user_text: str, draft: Dict[str, Any]) -
         "- Do not invent.\n"
         f"Current draft: {draft}\n"
     )
-    out = llm.invoke([SystemMessage(content=sys), HumanMessage(content=user_text)])
+    async with OPENAI_SEMAPHORE:
+        out = await llm.ainvoke([SystemMessage(content=sys), HumanMessage(content=user_text)])
     return out.model_dump()
 
 
@@ -331,7 +337,7 @@ checkpointer = InMemorySaver()
 
 
 @entrypoint(checkpointer=checkpointer)
-def run_subagent(inputs: dict) -> dict:
+async def run_subagent(inputs: dict) -> dict:
     """
     Generic subagent runner (Pattern A).
     inputs = {
@@ -370,7 +376,7 @@ def run_subagent(inputs: dict) -> dict:
 
     # 1) Extract whatever user provided; merge into draft
     if user_text.strip():
-        extracted = extract_fields(cfg, user_text, draft).result()
+        extracted = await extract_fields(cfg, user_text, draft)
         for k, v in extracted.items():
             if v is None:
                 continue
@@ -383,7 +389,7 @@ def run_subagent(inputs: dict) -> dict:
     if issues_all:
         # bundle 2–4 issues for one natural question
         bundle = choose_issue_bundle(issues_all, max_items=4)
-        q = ask_for_issues(cfg, bundle, stage_id, draft)
+        q = await ask_for_issues(cfg, bundle, stage_id, draft)
         return {
             "status": "needs_user_input",
             "question": q,
@@ -394,7 +400,7 @@ def run_subagent(inputs: dict) -> dict:
 
     # 3) Stage valid -> run required tools
     for tool_name in (st.get("required_tools") or []):
-        result = tool_runner(tool_name, {"agent_id": cfg["agent_id"], "service_type": cfg.get("service_type"), **draft})
+        result = await tool_runner(tool_name, {"agent_id": cfg["agent_id"], "service_type": cfg.get("service_type"), **draft})
         tool_events.append({"tool": tool_name, "result": result})
         if isinstance(result, dict):
             for k in ("lead_id", "request_id", "draft_id", "status"):
@@ -405,7 +411,7 @@ def run_subagent(inputs: dict) -> dict:
     for tool_name in (st.get("optional_tools") or []):
         if not should_run_optional_tool(tool_name, draft):
             continue
-        result = tool_runner(tool_name, {"agent_id": cfg["agent_id"], "service_type": cfg.get("service_type"), **draft})
+        result = await tool_runner(tool_name, {"agent_id": cfg["agent_id"], "service_type": cfg.get("service_type"), **draft})
         tool_events.append({"tool": tool_name, "result": result})
 
     # 4) Move to next stage
@@ -414,7 +420,8 @@ def run_subagent(inputs: dict) -> dict:
         nxt_issues = validate_draft(cfg, nxt, draft)
         if nxt_issues:
             bundle = choose_issue_bundle(nxt_issues, max_items=4)
-            q = f"Great — I’ve captured the initial details. Next I need a bit more:\n{ask_for_issues(cfg, bundle, nxt, draft)}"
+            next_q = await ask_for_issues(cfg, bundle, nxt, draft)
+            q = f"Great — I've captured the initial details. Next I need a bit more:\n{next_q}"
             return {
                 "status": "needs_user_input",
                 "question": q,
@@ -432,7 +439,7 @@ def run_subagent(inputs: dict) -> dict:
 
     # 5) Ready payload
     payload = {"agent_id": cfg["agent_id"], "service_type": cfg.get("service_type"), **draft}
-    natural_preview = summarize_draft_naturally(cfg, payload)
+    natural_preview = await summarize_draft_naturally(cfg, payload)
     return {
         "status": "ready",
         "payload": payload,
