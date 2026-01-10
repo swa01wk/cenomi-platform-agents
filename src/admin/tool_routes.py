@@ -8,7 +8,7 @@ from src.tool_registry.schemas import (
     CustomAPITool,
 )
 
-router = APIRouter(prefix="/poc/tools", tags=["Tool Registry PoC"])
+router = APIRouter(prefix="/v1", tags=["Tool Registry PoC"])
 tool_manager = ToolRegistryManager()
 
 # ---------- PREBUILT TOOLS ----------
