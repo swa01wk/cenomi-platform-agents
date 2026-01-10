@@ -35,7 +35,6 @@ def create_custom_function_tool(tool: CustomFuntionTool):
 def list_custom_function_tools():
     return tool_manager.list_tools_by_type("custom_function")
 
-
 # ---------- CUSTOM API TOOLS ----------
 @router.post("/custom-api", response_model=CustomAPITool)
 def create_custom_api_tool(tool: CustomAPITool):
@@ -54,6 +53,16 @@ def list_all_tools():
     List all tools regardless of type.
     """
     return tool_manager.list_tools()
+
+@router.get("/{tool_id}")
+def get_tool(tool_id: str):
+    """
+    Get a specific tool by ID.
+    """
+    tool = tool_manager.get_tool(tool_id)
+    if not tool:
+        raise HTTPException(status_code=404, detail="Tool not found")
+    return tool
 
 @router.delete("/{tool_id}")
 def delete_tool(tool_id: str):

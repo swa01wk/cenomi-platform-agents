@@ -1,39 +1,6 @@
 {
   "tools": [
     {
-      "id": "agent_1d4500ea-2360-46d1-9548-58aee58ef6f2",
-      "type": "custom_function",
-      "name": "calculate_discount",
-      "description": "Calculate discounted price for a product",
-      "input_schema": {
-        "type": "object",
-        "properties": {
-          "price": {
-            "type": "number"
-          },
-          "discount_percentage": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "price",
-          "discount_percentage"
-        ]
-      },
-      "output_schema": {
-        "type": "object",
-        "properties": {
-          "final_price": {
-            "type": "number"
-          }
-        }
-      },
-      "function": "calculate_discount_fn",
-      "metadata": {
-        "created_at": "2026-01-10T12:03:29.293577+00:00"
-      }
-    },
-    {
       "id": "agent_c9bf6a9b-7c03-4b0e-a431-9cfe5ecab041",
       "type": "custom_api",
       "name": "get_user_orders",
@@ -65,6 +32,34 @@
       "api_request_type": "GET",
       "metadata": {
         "created_at": "2026-01-10T12:04:19.024323+00:00"
+      }
+    },
+    {
+      "id": "agent_e0fff10e-1592-48d6-bd2b-a46b2536efe3",
+      "type": "prebuilt",
+      "name": "web_search",
+      "description": "Search the web using a built-in provider",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array"
+          }
+        }
+      },
+      "metadata": {
+        "created_at": "2026-01-10T12:11:06.412055+00:00"
       }
     }
   ]

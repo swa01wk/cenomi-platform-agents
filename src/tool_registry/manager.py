@@ -1,13 +1,22 @@
 from typing import Dict, List, Any, Optional
 import uuid
 
-from src.tool_registry.store import ToolRegistryStore
-from src.tool_registry.schemas import (
-    ToolBase,
-    PrebuiltTool,
-    CustomAPITool,
-    CustomFuntionTool
-)
+try:
+    from src.tool_registry.store import ToolRegistryStore
+    from src.tool_registry.schemas import (
+        ToolBase,
+        PrebuiltTool,
+        CustomAPITool,
+        CustomFuntionTool
+    )
+except ModuleNotFoundError:
+    from store import ToolRegistryStore
+    from schemas import (
+        ToolBase,
+        PrebuiltTool,
+        CustomAPITool,
+        CustomFuntionTool
+    )
 
 class ToolRegistryManager:
     def __init__(self, store: ToolRegistryStore = ToolRegistryStore()):
@@ -32,6 +41,21 @@ class ToolRegistryManager:
     
     def list_tools(self) -> List[Dict[str, Any]]:
         return list(self._tools.values())
+
+    def list_tools_by_type(self, tool_type: str) -> List[Dict[str, Any]]:
+        """
+        List tools filtered by type.
+        
+        Args:
+            tool_type: Type of tools to filter by ('prebuilt', 'custom_function', 'custom_api')
+        
+        Returns:
+            List of tools matching the specified type
+        """
+        return [
+            tool for tool in self._tools.values()
+            if tool.get("type", "").lower() == tool_type.lower()
+        ]
 
     def get_tool(self, tool_id: str) -> Optional[Dict[str, Any]]:
         return self._tools.get(tool_id)
@@ -61,24 +85,42 @@ if __name__ == "__main__":
     store = ToolRegistryStore()
     manager = ToolRegistryManager(store)
 
-    # Add a prebuilt tool
-    prebuilt_tool = {
-        "type": "custom_api",
-        "name": "Example Prebuilt Tool",
-        "description": "A sample prebuilt tool for testing.",
-        "input_schema": {"type": "object", "properties": {}},
-        "output_schema": {"type": "object", "properties": {}},
-        "api_url": "https://api.example.com/data",
-        "api_request_type": "GET"
-    }
-    manager.add_tool(prebuilt_tool)
+    # Add different types of tools
+    # prebuilt_tool = {
+    #     "type": "prebuilt",
+    #     "name": "Prebuilt Tool",
+    #     "description": "A prebuilt tool.",
+    #     "input_schema": {"type": "object", "properties": {}},
+    #     "output_schema": {"type": "object", "properties": {}}
+    # }
+    
+    # custom_api_tool = {
+    #     "type": "custom_api",
+    #     "name": "Custom API Tool",
+    #     "description": "A custom API tool.",
+    #     "input_schema": {"type": "object", "properties": {}},
+    #     "output_schema": {"type": "object", "properties": {}},
+    #     "api_url": "https://api.example.com/data",
+    #     "api_request_type": "GET"
+    # }
+    
+    # custom_function_tool = {
+    #     "type": "custom_function",
+    #     "name": "Custom Function Tool",
+    #     "description": "A custom function tool.",
+    #     "input_schema": {"type": "object", "properties": {}},
+    #     "output_schema": {"type": "object", "properties": {}},
+    #     "function": "my_custom_function"
+    # }
+    
+    # manager.add_tool(prebuilt_tool)
+    # manager.add_tool(custom_api_tool)
+    # manager.add_tool(custom_function_tool)
 
-    # List tools
-    print(manager.list_tools())
-
-    # Get a specific tool
-    print(manager.get_tool("tool_1"))
-
-    # Delete a tool
-    manager.delete_tool("tool_1")
-    print(manager.list_tools())
+    # Test list_tools_by_type
+    # print("All tools:", len(manager.list_tools()))
+    # print("Prebuilt tools:", len(manager.list_tools_by_type("prebuilt")))
+    # print("Custom API tools:", len(manager.list_tools_by_type("custom_api")))
+    # print("Custom Function tools:", len(manager.list_tools_by_type("custom_function")))
+    
+    # print("Prebuilt tools:", manager.list_tools_by_type("prebuilt"))
