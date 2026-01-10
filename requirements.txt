@@ -5,3 +5,4 @@ langgraph
 langchain
 langchain-openai
 pydantic
+aiofiles==24.1.0

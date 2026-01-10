@@ -41,11 +41,11 @@ def default_state(session_id: str) -> AppState:
     }
 
 @app.post("/v1/session")
-def create_session():
+async def create_session():
     sid = uuid.uuid4().hex
     SESSIONS[sid] = default_state(sid)
     # Run one supervisor step to show choices
-    state = GRAPH.invoke(SESSIONS[sid])
+    state = await GRAPH.ainvoke(SESSIONS[sid])
     SESSIONS[sid] = state
     return {"session_id": sid, "assistant_message": state.get("assistant_message")}
 
@@ -55,7 +55,7 @@ class ChatIn(BaseModel):
     attachments: Optional[List[str]] = Field(default=None, description="Optional list of uploaded file references")
 
 @app.post("/v1/chat")
-def chat(body: ChatIn):
+async def chat(body: ChatIn):
     sid = body.session_id
     if sid not in SESSIONS:
         SESSIONS[sid] = default_state(sid)
@@ -65,7 +65,7 @@ def chat(body: ChatIn):
     # Attachments are stored separately in state for this turn
     state["turn_attachments"] = body.attachments or []
 
-    new_state = GRAPH.invoke(state)
+    new_state = await GRAPH.ainvoke(state)
 
     assistant_msg = new_state.get("assistant_message", "")
     new_state["messages"].append({"role": "assistant", "content": assistant_msg})
