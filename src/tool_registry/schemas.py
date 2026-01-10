@@ -16,7 +16,7 @@ class ToolBase(BaseModel):
         ..., description="JSON Schema defining tool input"
     )
     output_schema: Dict[str, Any] = Field(
-        ..., description="JSON Schema defining tool output"
+        default_factory=lambda: {"type": "object"}
     )
     metadata: Metadata
 
@@ -27,7 +27,6 @@ class PrebuiltTool(ToolBase):
 
 class CustomAPITool(ToolBase):
     type: Literal["custom_api"]
-    
     custom_message: Optional[str] = Field(
             None,
             description="Guides LLM to extract specific fields from API response"
