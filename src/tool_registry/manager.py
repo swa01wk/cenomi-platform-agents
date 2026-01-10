@@ -10,7 +10,10 @@ from schemas import (
 )
 
 class ToolRegistryManager:
-
+    """
+    In-memory manager for tool registry.
+    Responsible for validation, CRUD operations, and persistence.
+    """
     def __init__(self, store: ToolRegistryStore):
         self.store = store
         self._registry = self.store.load()
@@ -49,10 +52,6 @@ class ToolRegistryManager:
 
         if tool_id in self._tools:
             raise ValueError(f"Tool with id '{tool_id}' already exists")
-
-        # auto-fill metadata timestamp if missing
-        tool_data.setdefault("metadata", {})
-        tool_data["metadata"].setdefault("created_at", datetime.utcnow().isoformat())
 
         # schema validation
         validated_tool = self._validate_tool(tool_data)

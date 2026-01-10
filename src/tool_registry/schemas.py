@@ -1,5 +1,5 @@
 from typing import Dict, Any, Literal, Optional
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from pydantic import BaseModel, Field, computed_field
 
 class Metadata(BaseModel):
@@ -23,7 +23,7 @@ class ToolBase(BaseModel):
     @property
     def metadata(self) -> Metadata:
         return Metadata(
-            created_at=datetime.now(UTC).isoformat()
+            created_at=datetime.now(timezone.utc).isoformat()
         )
 
 class PrebuiltTool(ToolBase):
