@@ -1,5 +1,6 @@
 from __future__ import annotations
 import json
+import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 import aiofiles
@@ -13,7 +14,21 @@ class AgentRegistryStore:
         if not self.path.exists():
             self.path.write_text(json.dumps({"agents": []}, indent=2), encoding="utf-8")
 
+        # Hot-reload support: cache agents and track file modification time
+        self._cache: Optional[Dict[str, Any]] = None
+        self._last_modified: Optional[float] = None
+
     def _read(self) -> Dict[str, Any]:
+        # Hot-reload: check if file has been modified
+        current_mtime = os.path.getmtime(self.path) if self.path.exists() else None
+
+        if self._cache is not None and self._last_modified == current_mtime:
+            # Cache is valid, return cached data
+            return self._cache
+
+        # File changed or cache empty - reload
+        print(f"[AgentRegistry] Reloading agents from {self.path}")
+
         raw = self.path.read_text(encoding="utf-8").strip()
 
         # File exists but empty (0 bytes / whitespace)
@@ -40,10 +55,17 @@ class AgentRegistryStore:
             data["agents"] = []
             self._write(data)
 
+        # Update cache
+        self._cache = data
+        self._last_modified = current_mtime
+
         return data
 
     def _write(self, data: Dict[str, Any]) -> None:
         self.path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        # Invalidate cache after write
+        self._cache = None
+        self._last_modified = None
 
     def list_agents(self) -> List[Dict[str, Any]]:
         return self._read()["agents"]
@@ -82,6 +104,16 @@ class AgentRegistryStore:
 
     # Async methods
     async def _aread(self) -> Dict[str, Any]:
+        # Hot-reload: check if file has been modified
+        current_mtime = os.path.getmtime(self.path) if self.path.exists() else None
+
+        if self._cache is not None and self._last_modified == current_mtime:
+            # Cache is valid, return cached data
+            return self._cache
+
+        # File changed or cache empty - reload
+        print(f"[AgentRegistry] Reloading agents from {self.path} (async)")
+
         async with aiofiles.open(self.path, 'r', encoding='utf-8') as f:
             raw = (await f.read()).strip()
 
@@ -109,11 +141,18 @@ class AgentRegistryStore:
             data["agents"] = []
             await self._awrite(data)
 
+        # Update cache
+        self._cache = data
+        self._last_modified = current_mtime
+
         return data
 
     async def _awrite(self, data: Dict[str, Any]) -> None:
         async with aiofiles.open(self.path, 'w', encoding='utf-8') as f:
             await f.write(json.dumps(data, indent=2))
+        # Invalidate cache after write
+        self._cache = None
+        self._last_modified = None
 
     async def alist_agents(self) -> List[Dict[str, Any]]:
         data = await self._aread()

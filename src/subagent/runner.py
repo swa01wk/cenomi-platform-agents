@@ -9,6 +9,8 @@ from langchain_core.messages import SystemMessage, HumanMessage
 from langgraph.func import entrypoint, task
 from langgraph.checkpoint.memory import InMemorySaver
 
+from src.messages.generators import generate_validation_message, generate_confirmation_message
+
 MODEL_DEFAULT = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
 # OpenAI rate limiting: max 5 concurrent LLM calls to prevent quota exhaustion
@@ -73,7 +75,11 @@ def guess_array_field_key(cfg: Dict[str, Any], stage_required: List[str]) -> Opt
 def friendly_label(cfg: dict, key: str) -> str:
     for f in (cfg.get("fields") or []):
         if f["key"] == key:
-            return (f.get("label") or key).strip()
+            label = (f.get("label") or key).strip()
+            hint = f.get("hint")
+            if hint:
+                return f"{label} ({hint})"
+            return label
     return key
 
 
@@ -136,7 +142,7 @@ async def ask_for_issues(cfg: dict, issues: List[Dict[str, Any]], stage_id: str,
         "You are a friendly service assistant chatting with a tenant. "
         "Be natural, short, and helpful. Ask for multiple missing items in one message. "
         "Don't mention internal terms like 'stage' or 'schema'. "
-        "Don't show JSON. Use 1–2 short paragraphs. "
+        "Don't show JSON. Use 1-2 short paragraphs. "
         "If documents are missing, ask them to upload/attach files."
     )
 
@@ -199,7 +205,12 @@ def validate_draft(cfg: Dict[str, Any], stage_id: str, draft: Dict[str, Any]) ->
     # 1) missing required
     for k in required_fields:
         if _is_empty(draft.get(k)):
-            issues.append({"key": k, "kind": "missing", "message": "Required"})
+            issues.append({
+                "key": k,
+                "kind": "missing",
+                "message": "Required",
+                "label": friendly_label(cfg, k)
+            })
 
     # 2) invalid constraints (only if value present)
     for k, f in spec_by_key.items():
@@ -219,12 +230,22 @@ def validate_draft(cfg: Dict[str, Any], stage_id: str, draft: Dict[str, Any]) ->
                 else:
                     float(v)
             except Exception:
-                issues.append({"key": k, "kind": "invalid", "message": "Please provide a number."})
+                issues.append({
+                    "key": k,
+                    "kind": "invalid",
+                    "message": "Please provide a number.",
+                    "label": friendly_label(cfg, k)
+                })
                 continue
 
         if t == "array":
             if not isinstance(v, list):
-                issues.append({"key": k, "kind": "invalid", "message": "Please upload/attach files (can be multiple)."})
+                issues.append({
+                    "key": k,
+                    "kind": "invalid",
+                    "message": "Please upload/attach files (can be multiple).",
+                    "label": friendly_label(cfg, k)
+                })
                 continue
 
         # string constraints
@@ -235,22 +256,58 @@ def validate_draft(cfg: Dict[str, Any], stage_id: str, draft: Dict[str, Any]) ->
             choices = f.get("choices")
 
             if min_len is not None and len(v.strip()) < int(min_len):
-                issues.append({"key": k, "kind": "invalid", "message": f"Too short (min {min_len} characters)."})
+                issues.append({
+                    "key": k,
+                    "kind": "invalid",
+                    "message": f"Too short (min {min_len} characters).",
+                    "label": friendly_label(cfg, k)
+                })
             if max_len is not None and len(v.strip()) > int(max_len):
-                issues.append({"key": k, "kind": "invalid", "message": f"Too long (max {max_len} characters)."})
+                issues.append({
+                    "key": k,
+                    "kind": "invalid",
+                    "message": f"Too long (max {max_len} characters).",
+                    "label": friendly_label(cfg, k)
+                })
             if choices:
-                if v.strip() not in set(choices):
-                    issues.append({"key": k, "kind": "invalid", "message": f"Choose one of: {', '.join(choices)}."})
+                # Case-insensitive choice matching
+                v_lower = v.strip().lower()
+                choices_map = {c.lower(): c for c in choices}
+                if v_lower not in choices_map:
+                    issues.append({
+                        "key": k,
+                        "kind": "invalid",
+                        "message": f"Choose one of: {', '.join(choices)}.",
+                        "label": friendly_label(cfg, k)
+                    })
+                else:
+                    # Normalize to correct case from choices
+                    draft[k] = choices_map[v_lower]
             if pattern:
                 try:
                     if not re.match(pattern, v.strip()):
                         # give friendlier hints for common fields
                         if k == "email":
-                            issues.append({"key": k, "kind": "invalid", "message": "That doesn’t look like a valid email."})
+                            issues.append({
+                                "key": k,
+                                "kind": "invalid",
+                                "message": "That doesn't look like a valid email.",
+                                "label": friendly_label(cfg, k)
+                            })
                         elif k == "phone":
-                            issues.append({"key": k, "kind": "invalid", "message": "That doesn’t look like a valid phone number."})
+                            issues.append({
+                                "key": k,
+                                "kind": "invalid",
+                                "message": "That doesn't look like a valid phone number.",
+                                "label": friendly_label(cfg, k)
+                            })
                         else:
-                            issues.append({"key": k, "kind": "invalid", "message": "Format looks invalid."})
+                            issues.append({
+                                "key": k,
+                                "kind": "invalid",
+                                "message": "Format looks invalid.",
+                                "label": friendly_label(cfg, k)
+                            })
                 except re.error:
                     # ignore broken regex in config
                     pass
@@ -259,11 +316,21 @@ def validate_draft(cfg: Dict[str, Any], stage_id: str, draft: Dict[str, Any]) ->
         if k == "email" and isinstance(v, str) and not EMAIL_RE.match(v.strip()):
             # only add if not already flagged
             if not any(i["key"] == k and i["kind"] == "invalid" for i in issues):
-                issues.append({"key": k, "kind": "invalid", "message": "That doesn’t look like a valid email."})
+                issues.append({
+                    "key": k,
+                    "kind": "invalid",
+                    "message": "That doesn't look like a valid email.",
+                    "label": friendly_label(cfg, k)
+                })
 
         if k == "phone" and isinstance(v, str) and not PHONE_RE.match(v.strip()):
             if not any(i["key"] == k and i["kind"] == "invalid" for i in issues):
-                issues.append({"key": k, "kind": "invalid", "message": "Please include country code if possible (10–15 digits)."})
+                issues.append({
+                    "key": k,
+                    "kind": "invalid",
+                    "message": "Please include country code if possible (10–15 digits).",
+                    "label": friendly_label(cfg, k)
+                })
     return issues
 
 async def llm_phrase(model: str, system: str, user: str) -> str:
@@ -304,24 +371,94 @@ def build_extraction_model(cfg: Dict[str, Any]):
 
 
 @task
-async def extract_fields(cfg: Dict[str, Any], user_text: str, draft: Dict[str, Any]) -> Dict[str, Any]:
+async def extract_fields(
+    cfg: Dict[str, Any],
+    user_text: str,
+    draft: Dict[str, Any],
+    conversation_history: Optional[List[Dict[str, str]]] = None
+) -> Dict[str, Any]:
     ExtractionModel = build_extraction_model(cfg)
     llm = ChatOpenAI(model=cfg.get("model") or MODEL_DEFAULT, temperature=0).with_structured_output(ExtractionModel)
 
-    keys = ", ".join([f["key"] for f in (cfg.get("fields") or [])])
+    # Build field descriptions with hints
+    field_descriptions = []
+    for f in (cfg.get("fields") or []):
+        key = f["key"]
+        label = f.get("label", key)
+        hint = f.get("hint")
+        ftype = f.get("type", "string")
+        choices = f.get("choices")
+
+        desc = f"{key} ({label})"
+        if hint:
+            desc += f" - {hint}"
+        if choices:
+            desc += f" - must be one of: {', '.join(choices)}"
+        if ftype == "number":
+            desc += " - must be a number"
+
+        field_descriptions.append(desc)
+
+    # Build context-aware system prompt
+    turn_count = len(conversation_history) if conversation_history else 0
+    collected_fields = [k for k, v in draft.items() if v not in (None, "", [])]
+
     sys = (
         (cfg.get("system_prompt") or "You are a helpful assistant collecting details conversationally.") + "\n\n"
-        f"Extract ANY of these keys if clearly present: {keys}\n"
+        "FIELD DEFINITIONS:\n" + "\n".join(f"- {fd}" for fd in field_descriptions) + "\n\n"
         "Rules:\n"
         "- User may provide one, a few, or all fields in one message.\n"
         "- Extract as many fields as you can.\n"
         "- If not present, return null.\n"
         "- Do not invent.\n"
+        "- Pay attention to field types (string vs number) and hints.\n"
+        "- For choice fields, normalize to exact match from allowed values (case-insensitive).\n"
+        "- Reference previous conversation context when relevant.\n"
+        "- Handle corrections gracefully (e.g., 'Actually, I meant...').\n"
         f"Current draft: {draft}\n"
+        f"Conversation turn: {turn_count}\n"
+        f"Already collected: {', '.join(collected_fields) if collected_fields else 'Nothing yet'}\n"
     )
+
+    # Build message chain with history
+    from langchain_core.messages import AIMessage
+    messages = [SystemMessage(content=sys)]
+
+    # Add recent conversation history for context (last 6 messages = 3 exchanges)
+    if conversation_history:
+        for msg in conversation_history[-6:]:
+            if msg.get("role") == "user":
+                messages.append(HumanMessage(content=msg.get("content", "")))
+            elif msg.get("role") == "assistant":
+                messages.append(AIMessage(content=msg.get("content", "")))
+
+    # Add current user message if not already in history
+    if not conversation_history or conversation_history[-1].get("content") != user_text:
+        messages.append(HumanMessage(content=user_text))
+
     async with OPENAI_SEMAPHORE:
-        out = await llm.ainvoke([SystemMessage(content=sys), HumanMessage(content=user_text)])
-    return out.model_dump()
+        out = await llm.ainvoke(messages)
+
+    # Post-process: normalize choice field values (case-insensitive)
+    extracted = out.model_dump()
+    spec_by_key = field_specs(cfg)
+    for k, v in extracted.items():
+        if v is None or not isinstance(v, str):
+            continue
+
+        field_spec = spec_by_key.get(k)
+        if not field_spec:
+            continue
+
+        choices = field_spec.get("choices")
+        if choices:
+            # Case-insensitive matching
+            v_lower = v.strip().lower()
+            choices_map = {c.lower(): c for c in choices}
+            if v_lower in choices_map:
+                extracted[k] = choices_map[v_lower]
+
+    return extracted
 
 
 # -----------------------------
@@ -346,6 +483,7 @@ async def run_subagent(inputs: dict) -> dict:
       "draft": dict,
       "current_stage": str|None,
       "attachments": [str],
+      "conversation_history": List[Dict[str, str]],
       "tool_runner": callable(tool_name, payload)->result
     }
     """
@@ -354,6 +492,7 @@ async def run_subagent(inputs: dict) -> dict:
     draft: Dict[str, Any] = dict(inputs.get("draft", {}))
     current_stage: Optional[str] = inputs.get("current_stage")
     attachments: List[str] = inputs.get("attachments") or []
+    conversation_history: List[Dict[str, str]] = inputs.get("conversation_history", [])
     tool_runner = inputs["tool_runner"]
 
     stage_id = compute_stage(cfg, current_stage)
@@ -376,7 +515,7 @@ async def run_subagent(inputs: dict) -> dict:
 
     # 1) Extract whatever user provided; merge into draft
     if user_text.strip():
-        extracted = await extract_fields(cfg, user_text, draft)
+        extracted = await extract_fields(cfg, user_text, draft, conversation_history)
         for k, v in extracted.items():
             if v is None:
                 continue
@@ -389,7 +528,7 @@ async def run_subagent(inputs: dict) -> dict:
     if issues_all:
         # bundle 2–4 issues for one natural question
         bundle = choose_issue_bundle(issues_all, max_items=4)
-        q = await ask_for_issues(cfg, bundle, stage_id, draft)
+        q = await generate_validation_message(cfg, bundle, draft, conversation_history)
         return {
             "status": "needs_user_input",
             "question": q,
@@ -420,7 +559,7 @@ async def run_subagent(inputs: dict) -> dict:
         nxt_issues = validate_draft(cfg, nxt, draft)
         if nxt_issues:
             bundle = choose_issue_bundle(nxt_issues, max_items=4)
-            next_q = await ask_for_issues(cfg, bundle, nxt, draft)
+            next_q = await generate_validation_message(cfg, bundle, draft, conversation_history)
             q = f"Great — I've captured the initial details. Next I need a bit more:\n{next_q}"
             return {
                 "status": "needs_user_input",
@@ -439,7 +578,7 @@ async def run_subagent(inputs: dict) -> dict:
 
     # 5) Ready payload
     payload = {"agent_id": cfg["agent_id"], "service_type": cfg.get("service_type"), **draft}
-    natural_preview = await summarize_draft_naturally(cfg, payload)
+    natural_preview = await generate_confirmation_message(cfg, payload, conversation_history)
     return {
         "status": "ready",
         "payload": payload,
