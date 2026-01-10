@@ -1,5 +1,5 @@
 from typing import Dict, List, Any, Optional
-from datetime import datetime
+import uuid
 
 from store import ToolRegistryStore
 from schemas import (
@@ -10,10 +10,6 @@ from schemas import (
 )
 
 class ToolRegistryManager:
-    """
-    In-memory manager for tool registry.
-    Responsible for validation, CRUD operations, and persistence.
-    """
     def __init__(self, store: ToolRegistryStore):
         self.store = store
         self._registry = self.store.load()
@@ -26,16 +22,12 @@ class ToolRegistryManager:
 
     def _validate_tool(self, tool_data: Dict[str, Any]) -> ToolBase:
         tool_type = tool_data.get("type")
-
         if tool_type.lower() == "prebuilt":
             return PrebuiltTool(**tool_data)
-        
         if tool_type.lower() == "custom_function":
             return CustomFuntionTool(**tool_data)
-        
         if tool_type.lower() == "custom_api":
             return CustomAPITool(**tool_data)
-
         raise ValueError(f"Unsupported tool type: {tool_type}")
     
     def list_tools(self) -> List[Dict[str, Any]]:
@@ -45,15 +37,14 @@ class ToolRegistryManager:
         return self._tools.get(tool_id)
 
     def add_tool(self, tool_data: Dict[str, Any]) -> Dict[str, Any]:
-        tool_id = tool_data.get("id")
-
-        if not tool_id:
-            raise ValueError("Tool id is required")
-
-        if tool_id in self._tools:
-            raise ValueError(f"Tool with id '{tool_id}' already exists")
-
-        # schema validation
+        tool_name = tool_data.get("name")
+        if not tool_name:
+            raise ValueError("Tool name is required")
+        for existing_tool in self._tools.values():
+            if existing_tool.get("name") == tool_name:
+                raise ValueError(f"Tool with name '{tool_name}' already exists")
+        tool_id = f"agent_{uuid.uuid4()}"
+        tool_data["id"] = tool_id
         validated_tool = self._validate_tool(tool_data)
         self._tools[tool_id] = validated_tool.model_dump()
         self._persist()
@@ -72,7 +63,6 @@ if __name__ == "__main__":
 
     # Add a prebuilt tool
     prebuilt_tool = {
-        "id": "tool_1",
         "type": "custom_api",
         "name": "Example Prebuilt Tool",
         "description": "A sample prebuilt tool for testing.",
