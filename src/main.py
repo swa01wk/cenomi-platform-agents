@@ -82,3 +82,7 @@ def chat(body: ChatIn):
         "submitted": new_state.get("submitted"),
         "last_tool_events": new_state.get("last_tool_events", []),
     }
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, port=8000)
