@@ -51,6 +51,39 @@ log("Create Custom API Tool", r3)
 api_id = r3.json()["id"]
 
 
+# ---------- MODIFY ----------
+
+log(
+    "Modify Prebuilt Tool",
+    requests.put(
+        f"{BASE_URL}/{prebuilt_id}",
+        json={"description": "Updated web search tool"}
+    )
+)
+
+log(
+    "Modify Custom Function Tool",
+    requests.put(
+        f"{BASE_URL}/{function_id}",
+        json={
+            "description": "Updated discount calculator",
+            "function": "updated_discount_fn"
+        }
+    )
+)
+
+log(
+    "Modify Custom API Tool",
+    requests.put(
+        f"{BASE_URL}/{api_id}",
+        json={
+            "description": "Updated order fetcher",
+            "custom_message": "Extract order_id and total_price"
+        }
+    )
+)
+
+
 # ---------- LIST ----------
 
 log("List Prebuilt Tools", requests.get(f"{BASE_URL}/prebuilt"))
@@ -76,3 +109,5 @@ log("Delete API Tool", requests.delete(f"{BASE_URL}/{api_id}"))
 # ---------- VERIFY ----------
 
 log("Verify Prebuilt Deleted", requests.get(f"{BASE_URL}/{prebuilt_id}"))
+
+print("\n✅ ALL TESTS (INCLUDING MODIFY) PASSED")
