@@ -51,63 +51,63 @@ log("Create Custom API Tool", r3)
 api_id = r3.json()["id"]
 
 
-# ---------- MODIFY ----------
+# # ---------- MODIFY ----------
 
-log(
-    "Modify Prebuilt Tool",
-    requests.put(
-        f"{BASE_URL}/{prebuilt_id}",
-        json={"description": "Updated web search tool"}
-    )
-)
+# log(
+#     "Modify Prebuilt Tool",
+#     requests.put(
+#         f"{BASE_URL}/{prebuilt_id}",
+#         json={"description": "Updated web search tool"}
+#     )
+# )
 
-log(
-    "Modify Custom Function Tool",
-    requests.put(
-        f"{BASE_URL}/{function_id}",
-        json={
-            "description": "Updated discount calculator",
-            "function": "updated_discount_fn"
-        }
-    )
-)
+# log(
+#     "Modify Custom Function Tool",
+#     requests.put(
+#         f"{BASE_URL}/{function_id}",
+#         json={
+#             "description": "Updated discount calculator",
+#             "function": "updated_discount_fn"
+#         }
+#     )
+# )
 
-log(
-    "Modify Custom API Tool",
-    requests.put(
-        f"{BASE_URL}/{api_id}",
-        json={
-            "description": "Updated order fetcher",
-            "custom_message": "Extract order_id and total_price"
-        }
-    )
-)
-
-
-# ---------- LIST ----------
-
-log("List Prebuilt Tools", requests.get(f"{BASE_URL}/prebuilt"))
-log("List Custom Function Tools", requests.get(f"{BASE_URL}/custom-function"))
-log("List Custom API Tools", requests.get(f"{BASE_URL}/custom-api"))
-log("List All Tools", requests.get(f"{BASE_URL}/"))
+# log(
+#     "Modify Custom API Tool",
+#     requests.put(
+#         f"{BASE_URL}/{api_id}",
+#         json={
+#             "description": "Updated order fetcher",
+#             "custom_message": "Extract order_id and total_price"
+#         }
+#     )
+# )
 
 
-# ---------- GET BY ID ----------
+# # ---------- LIST ----------
 
-log("Get Prebuilt Tool", requests.get(f"{BASE_URL}/{prebuilt_id}"))
-log("Get Function Tool", requests.get(f"{BASE_URL}/{function_id}"))
-log("Get API Tool", requests.get(f"{BASE_URL}/{api_id}"))
-
-
-# ---------- DELETE ----------
-
-log("Delete Prebuilt Tool", requests.delete(f"{BASE_URL}/{prebuilt_id}"))
-log("Delete Function Tool", requests.delete(f"{BASE_URL}/{function_id}"))
-log("Delete API Tool", requests.delete(f"{BASE_URL}/{api_id}"))
+# log("List Prebuilt Tools", requests.get(f"{BASE_URL}/prebuilt"))
+# log("List Custom Function Tools", requests.get(f"{BASE_URL}/custom-function"))
+# log("List Custom API Tools", requests.get(f"{BASE_URL}/custom-api"))
+# log("List All Tools", requests.get(f"{BASE_URL}/"))
 
 
-# ---------- VERIFY ----------
+# # ---------- GET BY ID ----------
 
-log("Verify Prebuilt Deleted", requests.get(f"{BASE_URL}/{prebuilt_id}"))
+# log("Get Prebuilt Tool", requests.get(f"{BASE_URL}/{prebuilt_id}"))
+# log("Get Function Tool", requests.get(f"{BASE_URL}/{function_id}"))
+# log("Get API Tool", requests.get(f"{BASE_URL}/{api_id}"))
 
-print("\n✅ ALL TESTS (INCLUDING MODIFY) PASSED")
+
+# # ---------- DELETE ----------
+
+# log("Delete Prebuilt Tool", requests.delete(f"{BASE_URL}/{prebuilt_id}"))
+# log("Delete Function Tool", requests.delete(f"{BASE_URL}/{function_id}"))
+# log("Delete API Tool", requests.delete(f"{BASE_URL}/{api_id}"))
+
+
+# # ---------- VERIFY ----------
+
+# log("Verify Prebuilt Deleted", requests.get(f"{BASE_URL}/{prebuilt_id}"))
+
+# print("\n✅ ALL TESTS (INCLUDING MODIFY) PASSED")

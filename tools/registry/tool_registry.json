@@ -1,3 +1,53 @@
 {
-  "tools": []
+  "tools": [
+    {
+      "id": "agent_8b8af64a-5063-4eb3-a00c-86c40e74ce43",
+      "type": "prebuilt",
+      "name": "web_search",
+      "description": "Search the web",
+      "input_schema": {
+        "type": "object"
+      },
+      "output_schema": {
+        "type": "object"
+      },
+      "metadata": {
+        "created_at": "2026-01-11T06:29:45.719585+00:00"
+      }
+    },
+    {
+      "id": "agent_84f2d4f0-97ad-457c-9f8b-6a70c8eb80af",
+      "type": "custom_function",
+      "name": "calculate_discount",
+      "description": "Calculate discount",
+      "input_schema": {
+        "type": "object"
+      },
+      "output_schema": {
+        "type": "object"
+      },
+      "function": "calculate_discount_fn",
+      "metadata": {
+        "created_at": "2026-01-11T06:29:45.719585+00:00"
+      }
+    },
+    {
+      "id": "agent_f35d529c-5c1a-4bf5-9959-f501cbbdd9b3",
+      "type": "custom_api",
+      "name": "get_user_orders",
+      "description": "Fetch orders",
+      "input_schema": {
+        "type": "object"
+      },
+      "output_schema": {
+        "type": "object"
+      },
+      "custom_message": null,
+      "api_url": "https://api.example.com/orders",
+      "api_request_type": "GET",
+      "metadata": {
+        "created_at": "2026-01-11T06:29:45.719585+00:00"
+      }
+    }
+  ]
 }
