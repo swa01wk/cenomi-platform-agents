@@ -4,6 +4,18 @@ from pydantic import BaseModel, Field, computed_field
 
 class Metadata(BaseModel):
     created_at: str
+    
+class PropertySchema(BaseModel):
+    """Schema for individual property definitions"""
+    type: str = Field(..., description="JSON schema type: 'string', 'number', 'integer', or 'boolean'")
+    description: Optional[str] = Field(None, description="Optional description of the property")
+
+class InputSchema(BaseModel):
+    """JSON Schema for tool input parameters"""
+    properties: Dict[str, PropertySchema] = Field(
+        ..., 
+        description="Dictionary mapping field names to their schema definitions"
+    )
 
 class ToolBase(BaseModel):
     id: str = Field(..., description="Unique tool identifier")
@@ -12,7 +24,7 @@ class ToolBase(BaseModel):
     )
     name: str = Field(..., description="Tool name exposed to the LLM")
     description: str = Field(..., description="Used by LLM for tool selection")
-    input_schema: Dict[str, Any] = Field(
+    input_schema: InputSchema = Field(
         description="JSON Schema defining tool input"
     )
     output_schema: Dict[str, Any] = Field(

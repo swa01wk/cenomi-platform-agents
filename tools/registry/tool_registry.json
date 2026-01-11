@@ -1,3 +1,50 @@
 {
-  "tools": []
+  "tools": [
+    {
+      "id": "agent_fe925649-e6ec-4002-8d7f-7374d07ffa7d",
+      "type": "custom_api",
+      "name": "order_info",
+      "description": "Fetch order details using order ID",
+      "input_schema": {
+        "properties": {
+          "order_id": {
+            "type": "string",
+            "description": "Unique ID of the order"
+          }
+        }
+      },
+      "output_schema": {},
+      "custom_message": "Order information fetched successfully",
+      "api_url": "http://localhost:8001/orders/{order_id}",
+      "api_request_type": "GET",
+      "metadata": {
+        "created_at": "2026-01-11T14:59:51.638935+00:00"
+      }
+    },
+    {
+      "id": "agent_54da582b-e8e6-4f98-ab19-bfaf0a5965b6",
+      "type": "custom_api",
+      "name": "create_order",
+      "description": "Create a new order",
+      "input_schema": {
+        "properties": {
+          "order_id": {
+            "type": "string",
+            "description": "Unique ID of the order"
+          },
+          "item": {
+            "type": "string",
+            "description": "Item to be ordered"
+          }
+        }
+      },
+      "output_schema": {},
+      "custom_message": "Order created successfully",
+      "api_url": "http://127.0.0.1:8001/orders",
+      "api_request_type": "POST",
+      "metadata": {
+        "created_at": "2026-01-11T15:01:16.159782+00:00"
+      }
+    }
+  ]
 }

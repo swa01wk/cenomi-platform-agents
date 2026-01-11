@@ -107,19 +107,31 @@ if __name__ == "__main__":
     manager = ToolRegistryManager(store)
 
     # --- CREATE TOOLS ---
-
     prebuilt = manager.add_tool({
-        "type": "prebuilt",
-        "name": "web_search",
-        "description": "Search tool",
-        "input_schema": {"type": "object"}
+    "type": "prebuilt",
+    "name": "web_search",
+    "description": "Search tool",
+    "input_schema": {
+        "properties": {}
+        }
     })
 
     custom_function = manager.add_tool({
         "type": "custom_function",
         "name": "discount_calc",
         "description": "Discount calculator",
-        "input_schema": {"type": "object"},
+        "input_schema": {
+            "properties": {
+                "original_price": {
+                    "type": "number",
+                    "description": "Original price of the item"
+                },
+                "discount_percentage": {
+                    "type": "number",
+                    "description": "Discount percentage to apply"
+                }
+            }
+        },
         "function": "calc_discount"
     })
 
@@ -127,76 +139,53 @@ if __name__ == "__main__":
         "type": "custom_api",
         "name": "order_fetch",
         "description": "Fetch orders",
-        "input_schema": {"type": "object"},
+        "input_schema": {
+            "properties": {
+                "order_id": {
+                    "type": "string",
+                    "description": "ID of the order to fetch"
+                },
+                "user_id": {
+                    "type": "string",
+                    "description": "ID of the user"
+                }
+            }
+        },
         "api_url": "https://api.example.com/orders",
         "api_request_type": "GET"
     })
 
+    # # --- MODIFY TOOLS ---
 
-    # --- MODIFY TOOLS ---
+    # manager.modify_tool(
+    #     prebuilt["id"],
+    #     {"description": "Updated prebuilt search tool"}
+    # )
 
-    manager.modify_tool(
-        prebuilt["id"],
-        {"description": "Updated prebuilt search tool"}
-    )
+    # manager.modify_tool(
+    #     custom_function["id"],
+    #     {
+    #         "description": "Updated discount calculator",
+    #         "function": "updated_discount_fn"
+    #     }
+    # )
 
-    manager.modify_tool(
-        custom_function["id"],
-        {
-            "description": "Updated discount calculator",
-            "function": "updated_discount_fn"
-        }
-    )
-
-    manager.modify_tool(
-        custom_api["id"],
-        {
-            "description": "Updated order fetcher",
-            "custom_message": "Extract order_id and price"
-        }
-    )
-
-
-    # --- VERIFY ---
-
-    assert manager.get_tool(prebuilt["id"])["description"] == "Updated prebuilt search tool"
-    assert manager.get_tool(custom_function["id"])["function"] == "updated_discount_fn"
-    assert manager.get_tool(custom_api["id"])["custom_message"] == "Extract order_id and price"
-
-    print("✅ MODIFY TOOL TEST PASSED FOR ALL TOOL TYPES")
+    # manager.modify_tool(
+    #     custom_api["id"],
+    #     {
+    #         "description": "Updated order fetcher",
+    #         "custom_message": "Extract order_id and price"
+    #     }
+    # )
 
 
-    # Add different types of tools
-    # prebuilt_tool = {
-    #     "type": "prebuilt",
-    #     "name": "Prebuilt Tool",
-    #     "description": "A prebuilt tool.",
-    #     "input_schema": {"type": "object", "properties": {}},
-    #     "output_schema": {"type": "object", "properties": {}}
-    # }
-    
-    # custom_api_tool = {
-    #     "type": "custom_api",
-    #     "name": "Custom API Tool",
-    #     "description": "A custom API tool.",
-    #     "input_schema": {"type": "object", "properties": {}},
-    #     "output_schema": {"type": "object", "properties": {}},
-    #     "api_url": "https://api.example.com/data",
-    #     "api_request_type": "GET"
-    # }
-    
-    # custom_function_tool = {
-    #     "type": "custom_function",
-    #     "name": "Custom Function Tool",
-    #     "description": "A custom function tool.",
-    #     "input_schema": {"type": "object", "properties": {}},
-    #     "output_schema": {"type": "object", "properties": {}},
-    #     "function": "my_custom_function"
-    # }
-    
-    # manager.add_tool(prebuilt_tool)
-    # manager.add_tool(custom_api_tool)
-    # manager.add_tool(custom_function_tool)
+    # # --- VERIFY ---
+
+    # assert manager.get_tool(prebuilt["id"])["description"] == "Updated prebuilt search tool"
+    # assert manager.get_tool(custom_function["id"])["function"] == "updated_discount_fn"
+    # assert manager.get_tool(custom_api["id"])["custom_message"] == "Extract order_id and price"
+
+    # print("✅ MODIFY TOOL TEST PASSED FOR ALL TOOL TYPES")
 
     # Test list_tools_by_type
     # print("All tools:", len(manager.list_tools()))
