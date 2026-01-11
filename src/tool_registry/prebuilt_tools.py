@@ -15,24 +15,17 @@ def generate_tool_id() -> str:
 # =========================================================
 # 1️⃣ Email Validator Tool
 # =========================================================
-
-class EmailValidatorInput(BaseModel):
-    email: EmailStr = Field(..., description="Email address to validate")
-
-def validate_email(email: EmailStr) -> Dict:
-    disposable_domains = {"tempmail.com", "mailinator.com"}
-    domain = email.split("@")[1]
-
-    if domain in disposable_domains:
-        return {"valid": False, "reason": "Disposable email domain"}
-
-    return {"valid": True, "reason": "Email format is valid"}
+def validate_email(email: str) -> Dict:
+    email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    if re.match(email_pattern, email):
+        return {"valid": True, "reason": "Email format is correct"}
+    else:
+        return {"valid": False, "reason": "Email format is not correct"}
 
 email_validator_tool = StructuredTool.from_function(
     name="email_validator",
     description="Validate whether an email address is valid and non-disposable",
     func=validate_email,
-    args_schema=EmailValidatorInput,
 )
 
 
