@@ -67,7 +67,7 @@ class ToolRegistryManager:
         for existing_tool in self._tools.values():
             if existing_tool.get("name") == tool_name:
                 raise ValueError(f"Tool with name '{tool_name}' already exists")
-        tool_id = f"agent_{uuid.uuid4()}"
+        tool_id = f"tool_{uuid.uuid4()}"
         tool_data["id"] = tool_id
         validated_tool = self._validate_tool(tool_data)
         self._tools[tool_id] = validated_tool.model_dump()
