@@ -73,6 +73,27 @@ class ToolRegistryManager:
         self._tools[tool_id] = validated_tool.model_dump()
         self._persist()
         return self._tools[tool_id]
+    
+    def modify_tool(self, tool_id: str, updates: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        existing_tool = self._tools.get(tool_id)
+        if not existing_tool:
+            return None
+
+        # Protected fields
+        protected_fields = {"id", "type", "metadata"}
+
+        # Apply allowed updates
+        for key, value in updates.items():
+            if key not in protected_fields:
+                existing_tool[key] = value
+
+        # Re-validate the updated tool
+        validated_tool = self._validate_tool(existing_tool)
+
+        self._tools[tool_id] = validated_tool.model_dump()
+        self._persist()
+        return self._tools[tool_id]
+
 
     def delete_tool(self, tool_id: str) -> bool:
         if tool_id not in self._tools:
@@ -84,6 +105,66 @@ class ToolRegistryManager:
 if __name__ == "__main__":
     store = ToolRegistryStore()
     manager = ToolRegistryManager(store)
+
+    # --- CREATE TOOLS ---
+
+    prebuilt = manager.add_tool({
+        "type": "prebuilt",
+        "name": "web_search",
+        "description": "Search tool",
+        "input_schema": {"type": "object"}
+    })
+
+    custom_function = manager.add_tool({
+        "type": "custom_function",
+        "name": "discount_calc",
+        "description": "Discount calculator",
+        "input_schema": {"type": "object"},
+        "function": "calc_discount"
+    })
+
+    custom_api = manager.add_tool({
+        "type": "custom_api",
+        "name": "order_fetch",
+        "description": "Fetch orders",
+        "input_schema": {"type": "object"},
+        "api_url": "https://api.example.com/orders",
+        "api_request_type": "GET"
+    })
+
+
+    # --- MODIFY TOOLS ---
+
+    manager.modify_tool(
+        prebuilt["id"],
+        {"description": "Updated prebuilt search tool"}
+    )
+
+    manager.modify_tool(
+        custom_function["id"],
+        {
+            "description": "Updated discount calculator",
+            "function": "updated_discount_fn"
+        }
+    )
+
+    manager.modify_tool(
+        custom_api["id"],
+        {
+            "description": "Updated order fetcher",
+            "custom_message": "Extract order_id and price"
+        }
+    )
+
+
+    # --- VERIFY ---
+
+    assert manager.get_tool(prebuilt["id"])["description"] == "Updated prebuilt search tool"
+    assert manager.get_tool(custom_function["id"])["function"] == "updated_discount_fn"
+    assert manager.get_tool(custom_api["id"])["custom_message"] == "Extract order_id and price"
+
+    print("✅ MODIFY TOOL TEST PASSED FOR ALL TOOL TYPES")
+
 
     # Add different types of tools
     # prebuilt_tool = {
