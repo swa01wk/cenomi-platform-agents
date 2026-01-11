@@ -14,7 +14,7 @@ The Tool Registry provides three types of tools that can be registered via API e
 | `type` | string | Yes | Tool type: `prebuilt`, `custom_function`, or `custom_api` |
 | `name` | string | Yes | Tool name exposed to the LLM |
 | `description` | string | Yes | Used by LLM for tool selection |
-| `input_schema` | object | Yes | JSON Schema defining tool input parameters |
+| `input_schema` | object | Yes | Object with `properties` field defining tool input parameters |
 | `output_schema` | object | No | JSON Schema defining expected output (defaults to `{"type": "object"}`) |
 
 ---
@@ -33,13 +33,12 @@ The Tool Registry provides three types of tools that can be registered via API e
   "name": "web_search",
   "description": "Search the web using a built-in provider",
   "input_schema": {
-    "type": "object",
     "properties": {
       "query": {
-        "type": "string"
+        "type": "string",
+        "description": "Search query string"
       }
-    },
-    "required": ["query"]
+    }
   },
   "output_schema": {
     "type": "object",
@@ -73,16 +72,16 @@ The Tool Registry provides three types of tools that can be registered via API e
   "name": "calculate_discount",
   "description": "Calculate discounted price for a product",
   "input_schema": {
-    "type": "object",
     "properties": {
       "price": {
-        "type": "number"
+        "type": "number",
+        "description": "Original price of the product"
       },
       "discount_percentage": {
-        "type": "number"
+        "type": "number",
+        "description": "Discount percentage to apply"
       }
-    },
-    "required": ["price", "discount_percentage"]
+    }
   },
   "output_schema": {
     "type": "object",
@@ -119,13 +118,12 @@ The Tool Registry provides three types of tools that can be registered via API e
   "name": "get_user_orders",
   "description": "Fetch all orders for a user",
   "input_schema": {
-    "type": "object",
     "properties": {
       "user_id": {
-        "type": "string"
+        "type": "string",
+        "description": "Unique identifier of the user"
       }
-    },
-    "required": ["user_id"]
+    }
   },
   "output_schema": {
     "type": "object",
