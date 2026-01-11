@@ -13,7 +13,7 @@ class ToolBase(BaseModel):
     name: str = Field(..., description="Tool name exposed to the LLM")
     description: str = Field(..., description="Used by LLM for tool selection")
     input_schema: Dict[str, Any] = Field(
-        ..., description="JSON Schema defining tool input"
+        description="JSON Schema defining tool input"
     )
     output_schema: Dict[str, Any] = Field(
         default_factory=lambda: {"type": "object"}
