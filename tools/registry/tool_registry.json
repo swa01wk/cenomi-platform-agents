@@ -42,8 +42,8 @@
       "output_schema": {
         "type": "object"
       },
-      "custom_message": null,
-      "api_url": "https://api.example.com/orders",
+      "custom_message": "take only the order id and provide it to the user",
+      "api_url": "http://127.0.0.1:8000/v1/custom-api",
       "api_request_type": "GET",
       "metadata": {
         "created_at": "2026-01-11T06:29:45.719585+00:00"
