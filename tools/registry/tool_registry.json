@@ -1,7 +1,103 @@
 {
-  "tools": [
+  "tools": [ 
     {
-      "id": "agent_fe925649-e6ec-4002-8d7f-7374d07ffa7d",
+      "id": "tool_517087cd-4f45-4dfb-835d-ec908086baa4",
+      "type": "prebuilt",
+      "name": "email_validator",
+      "description": "Validate whether an email address is valid and non-disposable",
+      "input_schema": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "Email address to validate"
+          }
+        },
+        "required": ["email"]
+      },
+      "output_schema": {
+        "valid": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string"
+        }
+      }
+    },
+
+    {
+      "id": "tool_9b2d94e3-1c6e-4f59-91a1-61e1cc0a6db1",
+      "type": "prebuilt",
+      "name": "phone_validator",
+      "description": "Validate Indian phone numbers",
+      "input_schema": {
+        "properties": {
+          "phone": {
+            "type": "string",
+            "description": "Indian phone number"
+          }
+        },
+        "required": ["phone"]
+      },
+      "output_schema": {
+        "valid": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string"
+        }
+      }
+    },
+
+    {
+      "id": "tool_c78a0e62-b6c1-49cf-9e5b-33f2cde54a77",
+      "type": "prebuilt",
+      "name": "password_strength_checker",
+      "description": "Evaluate password strength",
+      "input_schema": {
+        "properties": {
+          "password": {
+            "type": "string",
+            "description": "Password to evaluate"
+          }
+        },
+        "required": ["password"]
+      },
+      "output_schema": {
+        "strength_score": {
+          "type": "number"
+        },
+        "strong": {
+          "type": "boolean"
+        },
+        "rules": {
+          "type": "object"
+        }
+      }
+    },
+
+    {
+      "id": "tool_2aee9e7a-7d67-4f13-9f91-bd7bb91e84fd",
+      "type": "prebuilt",
+      "name": "url_validator",
+      "description": "Validate URL format",
+      "input_schema": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "URL to validate"
+          }
+        },
+        "required": ["url"]
+      },
+      "output_schema": {
+        "valid": {
+          "type": "boolean"
+        },
+        "url": {}
+      }
+    },
+    {
+      "id": "tool_fe925649-e6ec-4002-8d7f-7374d07ffa7d",
       "type": "custom_api",
       "name": "order_info",
       "description": "Fetch order details using order ID",
@@ -22,7 +118,7 @@
       }
     },
     {
-      "id": "agent_54da582b-e8e6-4f98-ab19-bfaf0a5965b6",
+      "id": "tool_54da582b-e8e6-4f98-ab19-bfaf0a5965b6",
       "type": "custom_api",
       "name": "create_order",
       "description": "Create a new order",
