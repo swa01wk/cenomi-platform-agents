@@ -1,6 +1,6 @@
 import requests
 
-BASE_URL = "http://127.0.0.1:8000/v1"
+BASE_URL = "http://127.0.0.1:8003/v1"
 
 def log(step, response):
     print(f"{step}: {response.status_code}")

@@ -1,6 +1,107 @@
 {
   "agents": [
     {
+      "agent_id": "fit_out_validator",
+      "name": "Fit Out Validator",
+      "description": "Validate if the file uploaded is legitimate or not",
+      "service_type": "fit_out_validator",
+      "keywords": [
+        "file",
+        "fit",
+        "fit out"
+      ],
+      "model": "gpt-4o-mini",
+      "system_prompt": "You are a Pdf validator agent, you have to determine if the file uplaoded is legitimate or not",
+      "fields": [
+        {
+          "key": "string",
+          "type": "string",
+          "required": true,
+          "label": "string",
+          "hint": "string",
+          "min_length": 0,
+          "max_length": 0,
+          "pattern": "string",
+          "choices": [
+            "string"
+          ]
+        }
+      ],
+      "stages": [
+        {
+          "stage_id": "string",
+          "label": "string",
+          "required_fields": [
+            "string"
+          ],
+          "required_tools": [
+            "string"
+          ],
+          "optional_tools": [
+            "string"
+          ]
+        }
+      ],
+      "tools": [
+        "string"
+      ]
+    },
+    {
+      "agent_id": "Phone_agent",
+      "name": "Phone Agent",
+      "description": "Takes phone number and email to fill a form",
+      "service_type": "phone_email_validation",
+      "keywords": [
+        "phone",
+        "email"
+      ],
+      "model": "gpt-4o-mini",
+      "system_prompt": "You are an agent, who takes phone and email address from a person to fill the form, don't worry about validating them",
+      "fields": [
+        {
+          "key": "email",
+          "type": "string",
+          "required": true,
+          "label": "Email",
+          "hint": null,
+          "min_length": null,
+          "max_length": null,
+          "pattern": null,
+          "choices": null
+        },
+        {
+          "key": "phone",
+          "type": "string",
+          "required": true,
+          "label": "Phone number",
+          "hint": null,
+          "min_length": null,
+          "max_length": null,
+          "pattern": null,
+          "choices": null
+        }
+      ],
+      "stages": [
+        {
+          "stage_id": "NEW_ENQUIRY",
+          "label": "Initial Form Submission",
+          "required_fields": [
+            "email",
+            "phone"
+          ],
+          "required_tools": [
+            "email_validator",
+            "validate_phone"
+          ],
+          "optional_tools": []
+        }
+      ],
+      "tools": [
+        "email_validator",
+        "validate_phone"
+      ]
+    },
+    {
       "agent_id": "lease_enquiry_agent",
       "name": "Lease Enquiry",
       "description": "Collect lease details for leasing a property, validate contact info, optionally verify CR, and submit.",
@@ -48,7 +149,7 @@
           "hint": null,
           "min_length": null,
           "max_length": null,
-          "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
+          "pattern": null,
           "choices": null
         },
         {
@@ -59,7 +160,7 @@
           "hint": null,
           "min_length": null,
           "max_length": null,
-          "pattern": "^\\+?\\d{10,15}$",
+          "pattern": null,
           "choices": null
         },
         {
@@ -186,7 +287,8 @@
             "unique_property_id"
           ],
           "required_tools": [
-            "verify_email_phone",
+            "email_validator",
+            "phone_validator",
             "create_lead_enquiry"
           ],
           "optional_tools": [
@@ -195,55 +297,8 @@
         }
       ],
       "tools": [
-        "verify_email_phone",
-        "verify_cr_number",
-        "create_lead_enquiry"
-      ]
-    },
-    {
-      "agent_id": "fit_out_validator",
-      "name": "Fit Out Validator",
-      "description": "Validate if the file uploaded is legitimate or not",
-      "service_type": "fit_out_validator",
-      "keywords": [
-        "file",
-        "fit",
-        "fit out"
-      ],
-      "model": "gpt-4o-mini",
-      "system_prompt": "You are a Pdf validator agent, you have to determine if the file uplaoded is legitimate or not",
-      "fields": [
-        {
-          "key": "string",
-          "type": "string",
-          "required": true,
-          "label": "string",
-          "hint": "string",
-          "min_length": 0,
-          "max_length": 0,
-          "pattern": "string",
-          "choices": [
-            "string"
-          ]
-        }
-      ],
-      "stages": [
-        {
-          "stage_id": "string",
-          "label": "string",
-          "required_fields": [
-            "string"
-          ],
-          "required_tools": [
-            "string"
-          ],
-          "optional_tools": [
-            "string"
-          ]
-        }
-      ],
-      "tools": [
-        "string"
+        "email_validator",
+        "phone_validator"
       ]
     }
   ]

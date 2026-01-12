@@ -1,5 +1,5 @@
 {
-  "tools": [ 
+  "tools": [
     {
       "id": "tool_517087cd-4f45-4dfb-835d-ec908086baa4",
       "type": "prebuilt",
@@ -21,9 +21,12 @@
         "reason": {
           "type": "string"
         }
+      },
+      "metadata": {
+        "created_at": "2026-01-11T00:00:00.000000+00:00",
+        "used_by": ["Phone_agent"]
       }
     },
-
     {
       "id": "tool_9b2d94e3-1c6e-4f59-91a1-61e1cc0a6db1",
       "type": "prebuilt",
@@ -45,101 +48,163 @@
         "reason": {
           "type": "string"
         }
-      }
-    },
-
-    {
-      "id": "tool_c78a0e62-b6c1-49cf-9e5b-33f2cde54a77",
-      "type": "prebuilt",
-      "name": "password_strength_checker",
-      "description": "Evaluate password strength",
-      "input_schema": {
-        "properties": {
-          "password": {
-            "type": "string",
-            "description": "Password to evaluate"
-          }
-        },
-        "required": ["password"]
       },
-      "output_schema": {
-        "strength_score": {
-          "type": "number"
-        },
-        "strong": {
-          "type": "boolean"
-        },
-        "rules": {
-          "type": "object"
-        }
+      "metadata": {
+        "created_at": "2026-01-11T00:00:00.000000+00:00",
+        "note": "Base implementation for validate_phone"
       }
     },
-
     {
-      "id": "tool_2aee9e7a-7d67-4f13-9f91-bd7bb91e84fd",
+      "id": "tool_validate_phone",
       "type": "prebuilt",
-      "name": "url_validator",
-      "description": "Validate URL format",
+      "name": "validate_phone",
+      "description": "Validate Indian phone numbers",
       "input_schema": {
         "properties": {
-          "url": {
+          "phone": {
             "type": "string",
-            "description": "URL to validate"
+            "description": "Indian phone number"
           }
         },
-        "required": ["url"]
+        "required": ["phone"]
       },
       "output_schema": {
         "valid": {
           "type": "boolean"
         },
-        "url": {}
-      }
-    },
-    {
-      "id": "tool_fe925649-e6ec-4002-8d7f-7374d07ffa7d",
-      "type": "custom_api",
-      "name": "order_info",
-      "description": "Fetch order details using order ID",
-      "input_schema": {
-        "properties": {
-          "order_id": {
-            "type": "string",
-            "description": "Unique ID of the order"
-          }
+        "reason": {
+          "type": "string"
         }
       },
-      "output_schema": {},
-      "custom_message": "Order information fetched successfully",
-      "api_url": "http://localhost:8001/orders/{order_id}",
-      "api_request_type": "GET",
       "metadata": {
-        "created_at": "2026-01-11T14:59:51.638935+00:00"
+        "created_at": "2026-01-12T00:00:00.000000+00:00",
+        "used_by": ["Phone_agent"],
+        "note": "Alias for phone_validator"
       }
     },
     {
-      "id": "tool_54da582b-e8e6-4f98-ab19-bfaf0a5965b6",
-      "type": "custom_api",
-      "name": "create_order",
-      "description": "Create a new order",
+      "id": "tool_verify_email_phone",
+      "type": "custom_function",
+      "name": "verify_email_phone",
+      "description": "Verify email and phone number through OTP verification",
       "input_schema": {
         "properties": {
-          "order_id": {
+          "email": {
             "type": "string",
-            "description": "Unique ID of the order"
+            "description": "Email to verify"
           },
-          "item": {
+          "phone": {
             "type": "string",
-            "description": "Item to be ordered"
+            "description": "Phone number to verify"
           }
+        },
+        "required": ["email", "phone"]
+      },
+      "output_schema": {
+        "ok": {
+          "type": "boolean"
+        },
+        "verified": {
+          "type": "boolean"
         }
       },
-      "output_schema": {},
-      "custom_message": "Order created successfully",
-      "api_url": "http://127.0.0.1:8001/orders",
-      "api_request_type": "POST",
+      "function": "verify_email_phone",
       "metadata": {
-        "created_at": "2026-01-11T15:01:16.159782+00:00"
+        "created_at": "2026-01-12T00:00:00.000000+00:00",
+        "category": "authentication",
+        "used_by": ["lease_enquiry_agent"]
+      }
+    },
+    {
+      "id": "tool_verify_cr_number",
+      "type": "custom_function",
+      "name": "verify_cr_number",
+      "description": "Verify CR (Commercial Registration) number",
+      "input_schema": {
+        "properties": {
+          "cr_number": {
+            "type": "string",
+            "description": "CR number to verify"
+          }
+        },
+        "required": ["cr_number"]
+      },
+      "output_schema": {
+        "ok": {
+          "type": "boolean"
+        },
+        "cr_verified": {
+          "type": "boolean"
+        },
+        "skipped": {
+          "type": "boolean"
+        }
+      },
+      "function": "verify_cr_number",
+      "metadata": {
+        "created_at": "2026-01-12T00:00:00.000000+00:00",
+        "category": "verification",
+        "used_by": ["lease_enquiry_agent"]
+      }
+    },
+    {
+      "id": "tool_create_lead_enquiry",
+      "type": "custom_function",
+      "name": "create_lead_enquiry",
+      "description": "Create lead enquiry in database",
+      "input_schema": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "description": "Agent identifier"
+          },
+          "service_type": {
+            "type": "string",
+            "description": "Service type"
+          },
+          "first_name": {
+            "type": "string",
+            "description": "First name"
+          },
+          "last_name": {
+            "type": "string",
+            "description": "Last name"
+          },
+          "email": {
+            "type": "string",
+            "description": "Email address"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Phone number"
+          },
+          "company_name": {
+            "type": "string",
+            "description": "Company name"
+          },
+          "brand_name": {
+            "type": "string",
+            "description": "Brand name"
+          }
+        },
+        "required": ["agent_id", "service_type"]
+      },
+      "output_schema": {
+        "ok": {
+          "type": "boolean"
+        },
+        "lead_id": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        }
+      },
+      "function": "create_lead_enquiry",
+      "metadata": {
+        "created_at": "2026-01-12T00:00:00.000000+00:00",
+        "category": "lead_management",
+        "used_by": ["lease_enquiry_agent"]
       }
     }
   ]

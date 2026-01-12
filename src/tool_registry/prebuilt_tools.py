@@ -105,6 +105,7 @@ url_validator_tool = StructuredTool.from_function(
 TOOL_REGISTRY = {
     "tool_517087cd-4f45-4dfb-835d-ec908086baa4": email_validator_tool,
     "tool_9b2d94e3-1c6e-4f59-91a1-61e1cc0a6db1": phone_validator_tool,
+    "tool_validate_phone": phone_validator_tool,  # Alias
     "tool_c78a0e62-b6c1-49cf-9e5b-33f2cde54a77": password_strength_tool,
     "tool_2aee9e7a-7d67-4f13-9f91-bd7bb91e84fd": url_validator_tool,
 }

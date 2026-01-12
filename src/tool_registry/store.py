@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Dict, Any
 
 class ToolRegistryStore:
-    def __init__(self, file_path: str = Path(__file__).parent.parent.parent / r"tools\registry\tool_registry.json"):
+    def __init__(self, file_path: str = Path(__file__).parent.parent.parent / r"tools/registry/tool_registry.json"):
         self.file_path = Path(file_path)
 
         if not self.file_path.exists():
