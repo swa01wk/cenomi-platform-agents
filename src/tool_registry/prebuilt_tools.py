@@ -98,6 +98,54 @@ url_validator_tool = StructuredTool.from_function(
     args_schema=URLValidatorInput,
 )
 
+
+# =========================================================
+# 6 pdf prompt Validator Tool
+# =========================================================
+from langchain_core.tools import StructuredTool
+from pydantic import BaseModel, Field
+from openai import OpenAI
+from typing import Dict
+
+client = OpenAI()
+
+class PDFPromptInput(BaseModel):
+    pdf_path: str = Field(..., description="Path to the PDF document")
+    prompt: str = Field(..., description="Prompt to analyze the PDF")
+
+class ValidationResult(BaseModel):
+    score: int = Field(..., description="A validation score from 0 to 100")
+
+def pdf_prompt_validator_func(pdf_path: str, prompt: str) -> ValidationResult:
+    with open(pdf_path, "rb") as file:
+        uploaded_file = client.files.create(
+            file=file,
+            purpose="user_data"
+        )
+    
+    response = client.beta.chat.completions.parse(
+        model="gpt-4o-nano",
+        temperature=0,
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": f"You are a PDF validation agent. Prompt: {prompt}"},
+                    {"type": "file", "file": {"file_id": uploaded_file.id}},
+                ]
+            }
+        ],
+        response_format=ValidationResult
+    )
+    return response.choices[0].message.parsed
+
+pdf_prompt_validator = StructuredTool.from_function(
+    name="pdf_prompt_validator",
+    description="Analyzes a PDF docuement based on a given prompt and returns a validation score.",
+    func=pdf_prompt_validator_func,
+    args_schema=PDFPromptInput,
+)
+
 # =========================================================
 # 🧠 TOOL REGISTRY (tool_id → tool)
 # =========================================================
@@ -108,6 +156,7 @@ TOOL_REGISTRY = {
     "tool_validate_phone": phone_validator_tool,  # Alias
     "tool_c78a0e62-b6c1-49cf-9e5b-33f2cde54a77": password_strength_tool,
     "tool_2aee9e7a-7d67-4f13-9f91-bd7bb91e84fd": url_validator_tool,
+    "tool_8f4e2d3a-5c6b-4e2f-9f1a-123456789abc": pdf_prompt_validator,
 }
 # =========================================================
 # 🔎 Fetch Tool by ID
