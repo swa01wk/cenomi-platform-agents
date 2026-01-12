@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
 from src.admin.routes import router as admin_router
+from src.admin.tool_routes import router  as tool_router
 from src.core.state import AppState
 from src.supervisor.graph import build_supervisor_graph
 from src.registry.store import AgentRegistryStore
@@ -14,6 +15,7 @@ load_dotenv()
 
 app = FastAPI(title="Agent Platform PoC (LangGraph Pattern A)")
 app.include_router(admin_router)
+app.include_router(tool_router)
 
 SESSIONS: Dict[str, AppState] = {}
 
@@ -82,3 +84,7 @@ def chat(body: ChatIn):
         "submitted": new_state.get("submitted"),
         "last_tool_events": new_state.get("last_tool_events", []),
     }
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, port=8000)
