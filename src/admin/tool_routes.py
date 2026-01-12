@@ -11,17 +11,6 @@ from src.tool_registry.schemas import (
 router = APIRouter(prefix="/v1", tags=["Tool Registry PoC"])
 tool_manager = ToolRegistryManager()
 
-@router.post("/prebuilt", response_model=PrebuiltTool)
-def create_prebuilt_tool(tool: PrebuiltTool):
-    try:
-        return tool_manager.add_tool(tool.model_dump())
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-@router.get("/prebuilt", response_model=List[PrebuiltTool])
-def list_prebuilt_tools():
-    return tool_manager.list_tools_by_type("prebuilt")
-
 @router.post("/custom-function", response_model=CustomFuntionTool)
 def create_custom_function_tool(tool: CustomFuntionTool):
     try:
