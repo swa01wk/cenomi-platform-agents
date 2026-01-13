@@ -514,9 +514,6 @@ async def run_subagent(inputs: dict) -> dict:
             draft[array_key] = existing
 
     # 1) Extract whatever user provided; merge into draft
-# In run_subagent function, replace lines 510-516:
-
-# 1) Extract whatever user provided; merge into draft
     if user_text.strip():
         extracted = await extract_fields(cfg, user_text, draft, conversation_history)
         spec_by_key = field_specs(cfg)
@@ -526,8 +523,8 @@ async def run_subagent(inputs: dict) -> dict:
                 continue
             if isinstance(v, str) and not v.strip():
                 continue
-            # Check if field has a validator
             
+            # Check if field has a validator
             field_spec = spec_by_key.get(k)
             if field_spec and field_spec.get("validator"):
                 validator_name = field_spec["validator"]
@@ -541,16 +538,23 @@ async def run_subagent(inputs: dict) -> dict:
                         prompt = field_spec.get("Prompt") or field_spec.get("hint") or f"valid {field_spec.get('label', k)}"
                         result = validator_tool.invoke({"pdf_path": v, "prompt": prompt})
                     else:
+                        # For standard validators (email, phone, url, etc.)
                         validator_tool = get_validator_by_name(validator_name)
-                        result = validator_tool.invoke({k: v})  # or just (v) depending on tool signature
+                        
+                        # Check if tool has args_schema (phone, url) or takes direct value (email)
+                        if hasattr(validator_tool, 'args_schema') and validator_tool.args_schema:
+                            # Has schema - pass as dict with the field key
+                            result = validator_tool.invoke({k: v})
+                        else:
+                            # No schema - pass value directly
+                            result = validator_tool.invoke(v)
                     
                     # If validation fails, skip storing this value
                     if isinstance(result, dict) and not result.get("valid", True):
                         continue
                 except Exception as e:
-                    # If validator not found or fails, skip this value
-                    print(f"Validator error for {k}: {e}")
                     continue
+            
             draft[k] = v
 
     # 2) Validate draft (missing + invalid)
