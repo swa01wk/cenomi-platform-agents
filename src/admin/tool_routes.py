@@ -1,5 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from typing import List
+from pathlib import Path
+import json
 
 from src.tool_registry.manager import ToolRegistryManager
 from src.tool_registry.schemas import (
@@ -36,6 +38,14 @@ def list_custom_api_tools():
 @router.get("/", response_model=List[object])
 def list_all_tools():
     return tool_manager.list_tools()
+
+file_path = Path.cwd() / "tools" / "registry" / "validators.json"
+@router.get("/get_validators", response_model=[])
+def list_validators():
+    with file_path.open("r", encoding="utf-8") as f:
+        data = json.load(f)
+    print(f"Validators found: {data.get('validators')}")
+    return data
 
 @router.get("/{tool_id}")
 def get_tool(tool_id: str):
