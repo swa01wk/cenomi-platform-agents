@@ -19,9 +19,8 @@
           "required": true,
           "label": "string",
           "hint": "string",
-          "min_length": 0,
-          "max_length": 0,
-          "pattern": "string",
+          "validator": null,
+          "Prompt": null,
           "choices": [
             "string"
           ]
@@ -64,10 +63,9 @@
           "required": true,
           "label": "Email",
           "hint": null,
-          "min_length": null,
-          "max_length": null,
-          "pattern": null,
-          "choices": null
+          "choices": null, 
+          "validator": "email_validator",
+          "Prompt": null
         },
         {
           "key": "phone",
@@ -75,10 +73,9 @@
           "required": true,
           "label": "Phone number",
           "hint": null,
-          "min_length": null,
-          "max_length": null,
-          "pattern": null,
-          "choices": null
+          "choices": null, 
+          "validator": "phone_validator",
+          "Prompt": null
         }
       ],
       "stages": [
@@ -125,10 +122,9 @@
           "required": true,
           "label": "First name",
           "hint": null,
-          "min_length": 2,
-          "max_length": null,
-          "pattern": null,
-          "choices": null
+          "choices": [], 
+          "validator": null,
+          "Prompt": null
         },
         {
           "key": "last_name",
@@ -136,10 +132,9 @@
           "required": true,
           "label": "Last name",
           "hint": null,
-          "min_length": 1,
-          "max_length": null,
-          "pattern": null,
-          "choices": null
+          "choices": [], 
+          "validator": null,
+          "Prompt": null
         },
         {
           "key": "email",
@@ -147,10 +142,9 @@
           "required": true,
           "label": "Email",
           "hint": null,
-          "min_length": null,
-          "max_length": null,
-          "pattern": null,
-          "choices": null
+          "choices": [], 
+          "validator": "email_validator",
+          "Prompt": null
         },
         {
           "key": "phone",
@@ -158,10 +152,9 @@
           "required": true,
           "label": "Phone number",
           "hint": null,
-          "min_length": null,
-          "max_length": null,
-          "pattern": null,
-          "choices": null
+          "choices": null, 
+          "validator": "phone_validator",
+          "Prompt": null
         },
         {
           "key": "company_name",
@@ -169,10 +162,9 @@
           "required": true,
           "label": "Company name",
           "hint": null,
-          "min_length": 2,
-          "max_length": null,
-          "pattern": null,
-          "choices": null
+          "choices": null, 
+          "validator": null,
+          "Prompt": null
         },
         {
           "key": "cr_number",
@@ -180,10 +172,9 @@
           "required": false,
           "label": "CR number (optional)",
           "hint": null,
-          "min_length": null,
-          "max_length": null,
-          "pattern": null,
-          "choices": null
+          "choices": null, 
+          "validator": null,
+          "Prompt": null
         },
         {
           "key": "brand_name",
@@ -191,10 +182,9 @@
           "required": true,
           "label": "Brand name",
           "hint": null,
-          "min_length": 2,
-          "max_length": null,
-          "pattern": null,
-          "choices": null
+          "choices": null, 
+          "validator": null,
+          "Prompt": null
         },
         {
           "key": "brand_name_ar",
@@ -202,10 +192,9 @@
           "required": false,
           "label": "Brand name (Arabic, optional)",
           "hint": null,
-          "min_length": null,
-          "max_length": null,
-          "pattern": null,
-          "choices": null
+          "choices": null, 
+          "validator": null,
+          "Prompt": null
         },
         {
           "key": "unit_type",
@@ -213,9 +202,8 @@
           "required": true,
           "label": "Unit type",
           "hint": null,
-          "min_length": null,
-          "max_length": null,
-          "pattern": null,
+          "validator": null,
+          "Prompt": null,
           "choices": [
             "Kiosk",
             "Shop",
@@ -230,10 +218,9 @@
           "required": true,
           "label": "Preferred area (sqm)",
           "hint": "Size in square meters, not location",
-          "min_length": null,
-          "max_length": null,
-          "pattern": null,
-          "choices": null
+          "choices": null, 
+          "validator": null,
+          "Prompt": null
         },
         {
           "key": "rent",
@@ -241,10 +228,9 @@
           "required": true,
           "label": "Rent budget",
           "hint": null,
-          "min_length": null,
-          "max_length": null,
-          "pattern": null,
-          "choices": null
+          "choices": null, 
+          "validator": null,
+          "Prompt": null
         },
         {
           "key": "lease_period",
@@ -252,10 +238,9 @@
           "required": true,
           "label": "Lease period (months)",
           "hint": null,
-          "min_length": null,
-          "max_length": null,
-          "pattern": null,
-          "choices": null
+          "choices": null, 
+          "validator": null,
+          "Prompt": null
         },
         {
           "key": "unique_property_id",
@@ -263,10 +248,9 @@
           "required": true,
           "label": "Property selection ID",
           "hint": null,
-          "min_length": 4,
-          "max_length": null,
-          "pattern": null,
-          "choices": null
+          "choices": null, 
+          "validator": null,
+          "Prompt": null
         }
       ],
       "stages": [
