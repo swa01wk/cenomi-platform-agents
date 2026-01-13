@@ -1,16 +1,20 @@
 from langchain_core.tools import StructuredTool
 from pydantic import BaseModel, EmailStr, HttpUrl, Field
+from langchain_openai import ChatOpenAI
+from openai import OpenAI
+from dotenv import load_dotenv
 from typing import Dict
 import re
 import uuid
+import json
 
+load_dotenv()
 # =========================================================
 # 🔧 Utility: Generate Tool ID
 # =========================================================
 
 def generate_tool_id() -> str:
     return f"tool_{uuid.uuid4()}"
-
 
 # =========================================================
 # 1️⃣ Email Validator Tool
@@ -98,9 +102,72 @@ url_validator_tool = StructuredTool.from_function(
     args_schema=URLValidatorInput,
 )
 
+# =========================================================
+# 6 field prompt Validator Tool
+# =========================================================
+class FieldPromptInput(BaseModel):
+    field: str = Field(..., description="The field value to validate")
+    prompt: str = Field(..., description="Description of the expected data type/format (e.g., 'email address', 'phone number', 'date in YYYY-MM-DD format')")
+
+class ValidationResult(BaseModel):
+    valid: bool = Field(..., description="Whether the field matches the expected format")
+    score: int = Field(..., description="A validation score from 0 to 100")
+
+def field_prompt_validator_func(field: str, prompt: str) -> Dict:
+    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+    
+    validation_prompt = f"""You are a data validation expert. Analyze whether the given field value matches the expected data type or format.
+
+    Field Value: "{field}"
+    Expected Format/Type: {prompt}
+
+    Evaluate:
+    1. Does the field value match the expected format/type?
+    2. Provide a validation score from 0 to 100 (0 = completely invalid, 100 = perfectly valid)
+    3. Explain your reasoning
+
+    Respond ONLY with valid JSON in this exact format (no markdown, no code blocks):
+    {{"valid": true, "score": 100, "reason": "explanation here"}}"""
+
+    try:
+        response = llm.invoke(validation_prompt)
+        content = response.content.strip()
+        
+        # Remove markdown code blocks if present
+        if content.startswith("```"):
+            content = re.sub(r'```(?:json)?\n?', '', content)
+            content = content.strip()
+        
+        # Parse JSON
+        result = json.loads(content)
+        
+        return {
+            "valid": result.get("valid", False),
+            "score": result.get("score", 0),
+        }
+    except json.JSONDecodeError as e:
+        print(f"JSON Parse Error: {e}")
+        print(f"Response content: {response.content}")
+        return {
+            "valid": False,
+            "score": 0,
+        }
+    except Exception as e:
+        print(f"Error: {e}")
+        return {
+            "valid": False,
+            "score": 0,
+        }
+
+field_prompt_validator = StructuredTool.from_function(
+    name="field_prompt_validator",
+    description="Validates whether a field value matches the data type or format specified in the prompt. Takes a field value and a description of the expected format, returns validation score and reasoning.",
+    func=field_prompt_validator_func,
+    args_schema=FieldPromptInput,
+)
 
 # =========================================================
-# 6 pdf prompt Validator Tool
+# 7 file prompt Validator Tool
 # =========================================================
 from langchain_core.tools import StructuredTool
 from pydantic import BaseModel, Field
@@ -109,14 +176,14 @@ from typing import Dict
 
 client = OpenAI()
 
-class PDFPromptInput(BaseModel):
+class FilePromptInput(BaseModel):
     pdf_path: str = Field(..., description="Path to the PDF document")
     prompt: str = Field(..., description="Prompt to analyze the PDF")
 
 class ValidationResult(BaseModel):
     score: int = Field(..., description="A validation score from 0 to 100")
 
-def pdf_prompt_validator_func(pdf_path: str, prompt: str) -> ValidationResult:
+def file_prompt_validator_func(pdf_path: str, prompt: str) -> ValidationResult:
     with open(pdf_path, "rb") as file:
         uploaded_file = client.files.create(
             file=file,
@@ -124,7 +191,7 @@ def pdf_prompt_validator_func(pdf_path: str, prompt: str) -> ValidationResult:
         )
     
     response = client.beta.chat.completions.parse(
-        model="gpt-4o-nano",
+        model="gpt-4o",
         temperature=0,
         messages=[
             {
@@ -139,11 +206,11 @@ def pdf_prompt_validator_func(pdf_path: str, prompt: str) -> ValidationResult:
     )
     return response.choices[0].message.parsed
 
-pdf_prompt_validator = StructuredTool.from_function(
+file_prompt_validator = StructuredTool.from_function(
     name="pdf_prompt_validator",
     description="Analyzes a PDF docuement based on a given prompt and returns a validation score.",
-    func=pdf_prompt_validator_func,
-    args_schema=PDFPromptInput,
+    func=file_prompt_validator_func,
+    args_schema= FilePromptInput,
 )
 
 # =========================================================
