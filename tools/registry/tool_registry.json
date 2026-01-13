@@ -40,10 +40,7 @@
             "type": "string",
             "description": "Indian phone number"
           }
-        },
-        "required": [
-          "phone"
-        ]
+        }
       },
       "output_schema": {
         "valid": {
@@ -54,11 +51,7 @@
         }
       },
       "metadata": {
-        "created_at": "2026-01-12T00:00:00.000000+00:00",
-        "used_by": [
-          "Phone_agent"
-        ],
-        "note": "Alias for phone_validator"
+        "created_at": "2026-01-13T10:45:01.459275+00:00"
       }
     },
     {

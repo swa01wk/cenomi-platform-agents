@@ -1,17 +1,15 @@
 {
   "agents": [
     {
-      "agent_id": "fit_out_validator",
-      "name": "Fit Out Validator",
-      "description": "Validate if the file uploaded is legitimate or not",
-      "service_type": "fit_out_validator",
+      "agent_id": "string",
+      "name": "string",
+      "description": "string",
+      "service_type": "string",
       "keywords": [
-        "file",
-        "fit",
-        "fit out"
+        "string"
       ],
       "model": "gpt-4o-mini",
-      "system_prompt": "You are a Pdf validator agent, you have to determine if the file uplaoded is legitimate or not",
+      "system_prompt": "string",
       "fields": [
         {
           "key": "string",
@@ -19,11 +17,11 @@
           "required": true,
           "label": "string",
           "hint": "string",
-          "validator": null,
-          "Prompt": null,
           "choices": [
             "string"
-          ]
+          ],
+          "validator": "string",
+          "prompt": "string"
         }
       ],
       "stages": [
@@ -46,60 +44,7 @@
       ]
     },
     {
-      "agent_id": "Phone_agent",
-      "name": "Phone Agent",
-      "description": "Takes phone number and email to fill a form",
-      "service_type": "phone_email_validation",
-      "keywords": [
-        "phone",
-        "email"
-      ],
-      "model": "gpt-4o-mini",
-      "system_prompt": "You are an agent, who takes phone and email address from a person to fill the form, don't worry about validating them",
-      "fields": [
-        {
-          "key": "email",
-          "type": "string",
-          "required": true,
-          "label": "Email",
-          "hint": null,
-          "choices": null, 
-          "validator": "email_validator",
-          "Prompt": null
-        },
-        {
-          "key": "phone",
-          "type": "string",
-          "required": true,
-          "label": "Phone number",
-          "hint": null,
-          "choices": null, 
-          "validator": "phone_validator",
-          "Prompt": null
-        }
-      ],
-      "stages": [
-        {
-          "stage_id": "NEW_ENQUIRY",
-          "label": "Initial Form Submission",
-          "required_fields": [
-            "email",
-            "phone"
-          ],
-          "required_tools": [
-            "email_validator",
-            "validate_phone"
-          ],
-          "optional_tools": []
-        }
-      ],
-      "tools": [
-        "email_validator",
-        "validate_phone"
-      ]
-    },
-    {
-      "agent_id": "lease_enquiry_agent",
+      "agent_id": "lease_enquiry_agent2",
       "name": "Lease Enquiry",
       "description": "Collect lease details for leasing a property, validate contact info, optionally verify CR, and submit.",
       "service_type": "lease_enquiry",
@@ -122,9 +67,9 @@
           "required": true,
           "label": "First name",
           "hint": null,
-          "choices": [], 
+          "choices": [],
           "validator": null,
-          "Prompt": null
+          "prompt": null
         },
         {
           "key": "last_name",
@@ -132,9 +77,9 @@
           "required": true,
           "label": "Last name",
           "hint": null,
-          "choices": [], 
+          "choices": [],
           "validator": null,
-          "Prompt": null
+          "prompt": null
         },
         {
           "key": "email",
@@ -142,9 +87,9 @@
           "required": true,
           "label": "Email",
           "hint": null,
-          "choices": [], 
+          "choices": [],
           "validator": "email_validator",
-          "Prompt": null
+          "prompt": null
         },
         {
           "key": "phone",
@@ -152,9 +97,9 @@
           "required": true,
           "label": "Phone number",
           "hint": null,
-          "choices": null, 
+          "choices": null,
           "validator": "phone_validator",
-          "Prompt": null
+          "prompt": null
         },
         {
           "key": "company_name",
@@ -162,9 +107,9 @@
           "required": true,
           "label": "Company name",
           "hint": null,
-          "choices": null, 
+          "choices": null,
           "validator": null,
-          "Prompt": null
+          "prompt": null
         },
         {
           "key": "cr_number",
@@ -172,9 +117,9 @@
           "required": false,
           "label": "CR number (optional)",
           "hint": null,
-          "choices": null, 
+          "choices": null,
           "validator": null,
-          "Prompt": null
+          "prompt": null
         },
         {
           "key": "brand_name",
@@ -182,9 +127,9 @@
           "required": true,
           "label": "Brand name",
           "hint": null,
-          "choices": null, 
+          "choices": null,
           "validator": null,
-          "Prompt": null
+          "prompt": null
         },
         {
           "key": "brand_name_ar",
@@ -192,9 +137,9 @@
           "required": false,
           "label": "Brand name (Arabic, optional)",
           "hint": null,
-          "choices": null, 
+          "choices": null,
           "validator": null,
-          "Prompt": null
+          "prompt": null
         },
         {
           "key": "unit_type",
@@ -202,15 +147,15 @@
           "required": true,
           "label": "Unit type",
           "hint": null,
-          "validator": null,
-          "Prompt": null,
           "choices": [
             "Kiosk",
             "Shop",
             "Restaurant",
             "Office",
             "Other"
-          ]
+          ],
+          "validator": null,
+          "prompt": null
         },
         {
           "key": "area",
@@ -218,9 +163,9 @@
           "required": true,
           "label": "Preferred area (sqm)",
           "hint": "Size in square meters, not location",
-          "choices": null, 
+          "choices": null,
           "validator": null,
-          "Prompt": null
+          "prompt": null
         },
         {
           "key": "rent",
@@ -228,9 +173,9 @@
           "required": true,
           "label": "Rent budget",
           "hint": null,
-          "choices": null, 
+          "choices": null,
           "validator": null,
-          "Prompt": null
+          "prompt": null
         },
         {
           "key": "lease_period",
@@ -238,9 +183,9 @@
           "required": true,
           "label": "Lease period (months)",
           "hint": null,
-          "choices": null, 
+          "choices": null,
           "validator": null,
-          "Prompt": null
+          "prompt": null
         },
         {
           "key": "unique_property_id",
@@ -248,9 +193,9 @@
           "required": true,
           "label": "Property selection ID",
           "hint": null,
-          "choices": null, 
+          "choices": null,
           "validator": null,
-          "Prompt": null
+          "prompt": null
         }
       ],
       "stages": [
@@ -271,8 +216,6 @@
             "unique_property_id"
           ],
           "required_tools": [
-            "email_validator",
-            "phone_validator",
             "create_lead_enquiry"
           ],
           "optional_tools": [
@@ -281,8 +224,8 @@
         }
       ],
       "tools": [
-        "email_validator",
-        "phone_validator"
+        "create_lead_enquiry",
+        "verify_cr_number"
       ]
     }
   ]
