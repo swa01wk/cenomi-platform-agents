@@ -514,6 +514,8 @@ async def run_subagent(inputs: dict) -> dict:
             draft[array_key] = existing
 
     # 1) Extract whatever user provided; merge into draft
+    validation_issues: List[Dict[str, Any]] = []
+    
     if user_text.strip():
         extracted = await extract_fields(cfg, user_text, draft, conversation_history)
         spec_by_key = field_specs(cfg)
@@ -549,13 +551,46 @@ async def run_subagent(inputs: dict) -> dict:
                             # No schema - pass value directly
                             result = validator_tool.invoke(v)
                     
-                    # If validation fails, skip storing this value
+                    # If validation fails, add to issues and skip storing
                     if isinstance(result, dict) and not result.get("valid", True):
+                        reason = result.get("reason", "Validation failed")
+                        validation_issues.append({
+                            "key": k,
+                            "kind": "invalid",
+                            "message": reason,
+                            "label": friendly_label(cfg, k)
+                        })
                         continue
                 except Exception as e:
+                    validation_issues.append({
+                        "key": k,
+                        "kind": "invalid",
+                        "message": f"Validation error: {str(e)}",
+                        "label": friendly_label(cfg, k)
+                    })
                     continue
             
             draft[k] = v
+
+    # 1.5) If inline validation found issues, ask user to correct them
+    if validation_issues:
+        # Humanize validation errors
+        error_details = "\n".join([f"- {issue['label']}: {issue['message']}" for issue in validation_issues])
+        system = (
+            "You are a friendly assistant helping a user fix validation errors. "
+            "Be conversational, polite, and brief. "
+            "Explain what needs to be corrected without being technical. "
+            "Keep it to 1-2 sentences."
+        )
+        user_prompt = f"The user provided some information but these fields have issues:\n{error_details}\n\nWrite a friendly message asking them to correct these."
+        q = await llm_phrase(cfg.get("model"), system, user_prompt)
+        return {
+            "status": "needs_user_input",
+            "question": q,
+            "draft": draft,
+            "stage_id": stage_id,
+            "tool_events": tool_events,
+        }
 
     # 2) Validate draft (missing + invalid)
     issues_all = validate_draft(cfg, stage_id, draft)
