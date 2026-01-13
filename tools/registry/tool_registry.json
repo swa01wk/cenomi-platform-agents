@@ -12,7 +12,9 @@
             "description": "Email address to validate"
           }
         },
-        "required": ["email"]
+        "required": [
+          "email"
+        ]
       },
       "output_schema": {
         "valid": {
@@ -24,7 +26,9 @@
       },
       "metadata": {
         "created_at": "2026-01-11T00:00:00.000000+00:00",
-        "used_by": ["Phone_agent"]
+        "used_by": [
+          "Phone_agent"
+        ]
       }
     },
     {
@@ -39,7 +43,9 @@
             "description": "Indian phone number"
           }
         },
-        "required": ["phone"]
+        "required": [
+          "phone"
+        ]
       },
       "output_schema": {
         "valid": {
@@ -66,7 +72,9 @@
             "description": "Indian phone number"
           }
         },
-        "required": ["phone"]
+        "required": [
+          "phone"
+        ]
       },
       "output_schema": {
         "valid": {
@@ -78,7 +86,9 @@
       },
       "metadata": {
         "created_at": "2026-01-12T00:00:00.000000+00:00",
-        "used_by": ["Phone_agent"],
+        "used_by": [
+          "Phone_agent"
+        ],
         "note": "Alias for phone_validator"
       }
     },
@@ -98,7 +108,10 @@
             "description": "Phone number to verify"
           }
         },
-        "required": ["email", "phone"]
+        "required": [
+          "email",
+          "phone"
+        ]
       },
       "output_schema": {
         "ok": {
@@ -112,7 +125,9 @@
       "metadata": {
         "created_at": "2026-01-12T00:00:00.000000+00:00",
         "category": "authentication",
-        "used_by": ["lease_enquiry_agent"]
+        "used_by": [
+          "lease_enquiry_agent"
+        ]
       }
     },
     {
@@ -127,7 +142,9 @@
             "description": "CR number to verify"
           }
         },
-        "required": ["cr_number"]
+        "required": [
+          "cr_number"
+        ]
       },
       "output_schema": {
         "ok": {
@@ -144,7 +161,9 @@
       "metadata": {
         "created_at": "2026-01-12T00:00:00.000000+00:00",
         "category": "verification",
-        "used_by": ["lease_enquiry_agent"]
+        "used_by": [
+          "lease_enquiry_agent"
+        ]
       }
     },
     {
@@ -187,7 +206,10 @@
             "description": "Brand name"
           }
         },
-        "required": ["agent_id", "service_type"]
+        "required": [
+          "agent_id",
+          "service_type"
+        ]
       },
       "output_schema": {
         "ok": {
@@ -204,7 +226,38 @@
       "metadata": {
         "created_at": "2026-01-12T00:00:00.000000+00:00",
         "category": "lead_management",
-        "used_by": ["lease_enquiry_agent"]
+        "used_by": [
+          "lease_enquiry_agent"
+        ]
+      }
+    },
+    {
+      "id": "tool_8fe11638-c59b-4770-9999-bf2956d14c00",
+      "type": "custom_function",
+      "name": "string",
+      "description": "string",
+      "input_schema": {
+        "properties": {
+          "additionalProp1": {
+            "type": "string",
+            "description": "string"
+          },
+          "additionalProp2": {
+            "type": "string",
+            "description": "string"
+          },
+          "additionalProp3": {
+            "type": "string",
+            "description": "string"
+          }
+        }
+      },
+      "output_schema": {
+        "additionalProp1": {}
+      },
+      "function": "string",
+      "metadata": {
+        "created_at": "2026-01-13T08:00:06.990740+00:00"
       }
     }
   ]
