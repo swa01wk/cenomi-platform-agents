@@ -1,3 +1,142 @@
 {
-    "validators":[]
+    "validators":[
+        {
+      "id": "tool_517087cd-4f45-4dfb-835d-ec908086baa4",
+      "type": "validator",
+      "name": "email_validator",
+      "description": "Validate whether an email address is valid and non-disposable",
+      "input_schema": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "Email address to validate"
+          }
+        },
+        "required": ["email"]
+      },
+      "output_schema": {
+        "valid": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string"
+        }
+      },
+      "metadata": {
+        "created_at": "2026-01-11T00:00:00.000000+00:00",
+        "used_by": ["Phone_agent"]
+      }
+    },
+    {
+      "id": "tool_6f2c9a41-1e8b-4d5a-9c3e-92b7a4f0eq12",
+      "type": "validator",
+      "name": "phone_validator",
+      "description": "Validate Indian phone numbers",
+      "input_schema": {
+        "properties": {
+          "phone": {
+            "type": "string",
+            "description": "Indian phone number"
+          }
+        },
+        "required": ["phone"]
+      },
+      "output_schema": {
+        "valid": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string"
+        }
+      },
+      "metadata": {
+        "created_at": "2026-01-11T00:00:00.000000+00:00",
+        "used_by": ["Phone_agent"]
+      }
+    },
+    {
+      "id": "tool_8c9a0f1e-2b4d-4c6a-9a6e-5e3c1b9d42af",
+      "type": "validator",
+      "name": "url_validator",
+      "description": "Validate whether a URL is well-formed, reachable, and non-malicious",
+      "input_schema": {
+          "properties": {
+          "url": {
+              "type": "string",
+              "description": "URL to validate"
+          }
+          },
+          "required": ["url"]
+      },
+      "output_schema": {
+          "valid": {
+          "type": "boolean"
+          }
+      },
+      "metadata": {
+          "created_at": "2026-01-11T00:00:00.000000+00:00",
+          "used_by": ["Phone_agent"]
+      }
+      },
+      {
+        "id": "tool_3b9f6c21-7c4e-4b8a-9d2a-1f6a8e2d91c4",
+        "type": "validator",
+        "name": "field_prompt_validator",
+        "description": "Validates the input based on the field format described in the prompt",
+        "input_schema": {
+          "properties": {
+            "prompt": {
+              "type": "string",
+              "description": "Field prompt text that describes the expected input format"
+            },
+            "input": {
+              "type": "string",
+              "description": "User-provided input to be validated against the prompt"
+            }
+          },
+          "required": ["prompt", "input"]
+        },
+        "output_schema": {
+          "valid": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "metadata": {
+          "created_at": "2026-01-11T00:00:00.000000+00:00",
+          "used_by": ["Phone_agent"]
+        }
+      },
+      {
+      "id": "tool_6f2c9a41-1e8b-4d5a-9c3e-92b7a4f0e611",
+      "type": "validator",
+      "name": "file_prompt_validator",
+      "description": "Evaluates the relevancy of a PDF file’s content based on the provided prompt and returns a relevancy score",
+      "input_schema": {
+        "properties": {
+          "pdf_path": {
+            "type": "string",
+            "description": "File system path or URI of the PDF document to be evaluated"
+          },
+          "prompt": {
+            "type": "string",
+            "description": "Prompt describing the information or context to check relevance against"
+          }
+        },
+        "required": ["pdf_path", "prompt"]
+      },
+      "output_schema": {
+        "score": {
+          "type": "integer",
+          "description": "Relevancy score indicating how well the PDF content matches the prompt"
+        }
+      },
+      "metadata": {
+        "created_at": "2026-01-11T00:00:00.000000+00:00",
+        "used_by": ["Phone_agent"]
+      }
+    }
+  ]
 }
