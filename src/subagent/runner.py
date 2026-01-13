@@ -10,7 +10,7 @@ from langgraph.func import entrypoint, task
 from langgraph.checkpoint.memory import InMemorySaver
 
 from src.messages.generators import generate_validation_message, generate_confirmation_message
-
+from src.tool_registry.prebuilt_tools import get_validator_by_name
 MODEL_DEFAULT = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
 # OpenAI rate limiting: max 5 concurrent LLM calls to prevent quota exhaustion
@@ -514,13 +514,43 @@ async def run_subagent(inputs: dict) -> dict:
             draft[array_key] = existing
 
     # 1) Extract whatever user provided; merge into draft
+# In run_subagent function, replace lines 510-516:
+
+# 1) Extract whatever user provided; merge into draft
     if user_text.strip():
         extracted = await extract_fields(cfg, user_text, draft, conversation_history)
+        spec_by_key = field_specs(cfg)
+        
         for k, v in extracted.items():
             if v is None:
                 continue
             if isinstance(v, str) and not v.strip():
                 continue
+            # Check if field has a validator
+            
+            field_spec = spec_by_key.get(k)
+            if field_spec and field_spec.get("validator"):
+                validator_name = field_spec["validator"]
+                try:
+                    if validator_name == "field_prompt_validator":
+                        validator_tool = get_validator_by_name(validator_name)
+                        prompt = field_spec.get("Prompt") or field_spec.get("hint") or f"valid {field_spec.get('label', k)}"
+                        result = validator_tool.invoke({"field": v, "prompt": prompt})
+                    elif validator_name == "file_prompt_validator":
+                        validator_tool = get_validator_by_name(validator_name)
+                        prompt = field_spec.get("Prompt") or field_spec.get("hint") or f"valid {field_spec.get('label', k)}"
+                        result = validator_tool.invoke({"pdf_path": v, "prompt": prompt})
+                    else:
+                        validator_tool = get_validator_by_name(validator_name)
+                        result = validator_tool.invoke({k: v})  # or just (v) depending on tool signature
+                    
+                    # If validation fails, skip storing this value
+                    if isinstance(result, dict) and not result.get("valid", True):
+                        continue
+                except Exception as e:
+                    # If validator not found or fails, skip this value
+                    print(f"Validator error for {k}: {e}")
+                    continue
             draft[k] = v
 
     # 2) Validate draft (missing + invalid)

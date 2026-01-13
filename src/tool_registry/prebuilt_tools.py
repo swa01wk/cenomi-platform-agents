@@ -22,9 +22,9 @@ def generate_tool_id() -> str:
 def validate_email(email: str) -> Dict:
     email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     if re.match(email_pattern, email):
-        return {"valid": True, "reason": "Email format is correct"}
+        return {"valid": True}
     else:
-        return {"valid": False, "reason": "Email format is not correct"}
+        return {"valid": False}
 
 email_validator_tool = StructuredTool.from_function(
     name="email_validator",
@@ -43,7 +43,7 @@ class PhoneValidatorInput(BaseModel):
 def validate_phone(phone: str) -> Dict:
     if re.match(r"^[6-9]\d{9}$", phone):
         return {"valid": True}
-    return {"valid": False, "reason": "Invalid Indian phone number"}
+    return {"valid": False}
 
 phone_validator_tool = StructuredTool.from_function(
     name="phone_validator",
@@ -88,12 +88,22 @@ password_strength_tool = StructuredTool.from_function(
 # =========================================================
 # 5️⃣ URL Validator Tool
 # =========================================================
-
 class URLValidatorInput(BaseModel):
-    url: HttpUrl = Field(..., description="URL to validate")
+    url: str = Field(..., description="URL to validate")
 
-def validate_url(url: HttpUrl) -> Dict:
-    return {"valid": True, "url": str(url)}
+def validate_url(url: str) -> Dict:
+    try:
+        # Try to validate as HttpUrl
+        from pydantic import HttpUrl, ValidationError
+        
+        # Create a temporary model to validate
+        class TempModel(BaseModel):
+            test_url: HttpUrl
+        
+        TempModel(test_url=url)
+        return {"valid": True}
+    except:
+        return {"valid": False}
 
 url_validator_tool = StructuredTool.from_function(
     name="url_validator",
@@ -111,7 +121,6 @@ class FieldPromptInput(BaseModel):
 
 class ValidationResult(BaseModel):
     valid: bool = Field(..., description="Whether the field matches the expected format")
-    score: int = Field(..., description="A validation score from 0 to 100")
 
 def field_prompt_validator_func(field: str, prompt: str) -> Dict:
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
@@ -143,20 +152,17 @@ def field_prompt_validator_func(field: str, prompt: str) -> Dict:
         
         return {
             "valid": result.get("valid", False),
-            "score": result.get("score", 0),
         }
     except json.JSONDecodeError as e:
         print(f"JSON Parse Error: {e}")
         print(f"Response content: {response.content}")
         return {
             "valid": False,
-            "score": 0,
         }
     except Exception as e:
         print(f"Error: {e}")
         return {
             "valid": False,
-            "score": 0,
         }
 
 field_prompt_validator = StructuredTool.from_function(
@@ -220,10 +226,10 @@ file_prompt_validator = StructuredTool.from_function(
 TOOL_REGISTRY = {
     "tool_517087cd-4f45-4dfb-835d-ec908086baa4": email_validator_tool,
     "tool_9b2d94e3-1c6e-4f59-91a1-61e1cc0a6db1": phone_validator_tool,
-    "tool_validate_phone": phone_validator_tool,  # Alias
+    "tool_validate_phone": phone_validator_tool,
     "tool_c78a0e62-b6c1-49cf-9e5b-33f2cde54a77": password_strength_tool,
     "tool_2aee9e7a-7d67-4f13-9f91-bd7bb91e84fd": url_validator_tool,
-    "tool_8f4e2d3a-5c6b-4e2f-9f1a-123456789abc": pdf_prompt_validator,
+    "tool_8f4e2d3a-5c6b-4e2f-9f1a-123456789abc": file_prompt_validator,
 }
 # =========================================================
 # 🔎 Fetch Tool by ID
@@ -232,6 +238,12 @@ def get_tool_by_id(tool_id: str) -> StructuredTool:
     if tool_id not in TOOL_REGISTRY:
         raise ValueError(f"Tool with id '{tool_id}' not found")
     return TOOL_REGISTRY[tool_id]
+
+def get_validator_by_name(tool_name: str) -> StructuredTool:
+    for tool in TOOL_REGISTRY.values():
+        if tool.name == tool_name:
+            return tool
+    raise ValueError(f"Tool with name '{tool_name}' not found")
 
 # =========================================================
 # 📤 Export tool metadata (for JSON/db storage)
@@ -246,3 +258,6 @@ def export_tool_metadata():
         }
         for tool in TOOL_REGISTRY.values()
     ]
+    
+if __name__ == "__main__":
+     print(url_validator_tool.invoke({"url": "h://www.google.com"}))
