@@ -10,11 +10,9 @@ class FieldSpec(BaseModel):
     required: bool = True
     label: str
     hint: Optional[str] = None
-
-    min_length: Optional[int] = None
-    max_length: Optional[int] = None
-    pattern: Optional[str] = None
     choices: Optional[List[str]] = None
+    validator: Optional[str] = None
+    prompt: Optional[str] = None
 
 class StageSpec(BaseModel):
     stage_id: str
