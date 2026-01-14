@@ -41,7 +41,7 @@ class PhoneValidatorInput(BaseModel):
     phone: str = Field(..., description="Indian phone number")
 
 def validate_phone(phone: str) -> Dict:
-    if re.match(r"^[6-9]\d{9}$", phone):
+    if re.match(r"^\+91[6-9]\d{9}$", phone):
         return {"valid": True}
     return {"valid": False}
 
