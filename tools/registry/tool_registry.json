@@ -221,6 +221,71 @@
       "metadata": {
         "created_at": "2026-01-13T08:00:06.990740+00:00"
       }
+    },
+    {
+      "id": "tool_8cc14b27-4cde-4b7a-af21-9bcc03f2b0d2",
+      "type": "custom_function",
+      "name": "upload_documents",
+      "description": "Tool uploads the document and relevant information about the document to s3 bucket and return url",
+      "input_schema": {
+        "properties": {
+          "file_path": {
+            "type": "Path",
+            "description": null
+          },
+          "file_extension": {
+            "type": "str",
+            "description": null
+          },
+          "request_id": {
+            "type": "str",
+            "description": null
+          },
+          "pms_id": {
+            "type": "str",
+            "description": null
+          },
+          "pms_tenant_id": {
+            "type": "str",
+            "description": null
+          },
+          "pms_customer_id": {
+            "type": "str",
+            "description": null
+          },
+          "document_type_id": {
+            "type": "str",
+            "description": null
+          },
+          "process_type_id": {
+            "type": "str",
+            "description": null
+          },
+          "source": {
+            "type": "str",
+            "description": null
+          },
+          "revised_version": {
+            "type": "str",
+            "description": null
+          },
+          "cenomi_contact_name": {
+            "type": "str",
+            "description": null
+          },
+          "cenomi_contact_role": {
+            "type": "str",
+            "description": null
+          }
+        }
+      },
+      "output_schema": {
+        "additionalProp1": {}
+      },
+      "function": "upload_documents",
+      "metadata": {
+        "created_at": "2026-01-14T03:33:53.315275+00:00"
+      }
     }
   ]
 }

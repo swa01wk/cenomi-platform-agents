@@ -14,7 +14,10 @@ import uuid
 import asyncio
 import os
 
-from src.tool_registry.cenomi_client_api import CenomiAPIClient
+try:
+    from src.tool_registry.cenomi_client_api import CenomiAPIClient
+except ImportError:
+    from cenomi_client_api import CenomiAPIClient
 
 # Cenomi API base URL
 CENOMI_API_BASE_URL = os.getenv("CENOMI_API_BASE_URL", "http://20.224.157.137:8000")
@@ -201,3 +204,23 @@ def get_custom_function(name: str) -> Callable:
     if name not in CUSTOM_FUNCTIONS:
         raise KeyError(f"Custom function not found: {name}")
     return CUSTOM_FUNCTIONS[name]
+
+if __name__ == "__main__":
+    response = asyncio.run(upload_documents(
+        {
+        "file_path": r"C:\github_work\cenomi-platform-agents\test_doc.pdf",
+        "file_extension": "pdf",
+        "request_id": "test-request-123",
+        "pms_id": "96225",
+        "pms_tenant_id": "t0108240",
+        "pms_customer_id": "customer-code",
+        "document_type_id": "FIT_ARCH_DRW",
+        "process_type_id": "2000",
+        "source": "tenant_central",
+        "revised_version": "no",
+        "cenomi_contact_name": "Test Contact",
+        "cenomi_contact_role": "Test Role"
+    }
+    ))
+    
+    print(response)
