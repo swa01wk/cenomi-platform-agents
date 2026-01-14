@@ -88,7 +88,6 @@ class CenomiAPIClient:
         status: str,
         lease_id: int,
         mall: str,
-        mall_ar: str,
         brand_id: int,
         brand_name: str,
         brand: str,
@@ -116,7 +115,7 @@ class CenomiAPIClient:
             },
             "file": file,
             "mall": mall,
-            "mall_ar": mall_ar,
+            "mall_ar": "",
             "brand_id": brand_id,
             "brand_name": brand_name,
             "brand": brand,
@@ -197,11 +196,9 @@ if __name__ == "__main__":
                 "documentType": "ARCHITECTURAL_DRAWING",
                 "documentTypeId": "FIT_ARCH_DRW",
                 "document_category_en": "Architectural Drawings",
-                "document_category_ar": "رسومات معمارية",
                 "documents": [
                     {
                         "document_name_en": "Architectural Layout",
-                        "document_name_ar": "التخطيط المعماري",
                         "documentTypeId": "FIT_ARCH_DRW_ARCH_LAYOUT",
                         "status": "uploaded",
                         "comment": None
@@ -214,7 +211,6 @@ if __name__ == "__main__":
             document_status_list=[
                 {
                     "document_name_en": "Architectural Layout",
-                    "document_name_ar": "التخطيط المعماري",
                     "documentTypeId": "FIT_ARCH_DRW_ARCH_LAYOUT",
                     "status": "uploaded",
                     "comment": None
@@ -228,7 +224,6 @@ if __name__ == "__main__":
                     "docNames": [
                         {
                             "document_name_en": "Architectural Layout",
-                            "document_name_ar": "التخطيط المعماري",
                             "documentTypeId": "FIT_ARCH_DRW_ARCH_LAYOUT",
                             "status": "uploaded",
                             "comment": None
@@ -241,7 +236,6 @@ if __name__ == "__main__":
             status="SUBMITTED",
             lease_id=96225,
             mall="Nakheel Mall",
-            mall_ar="النخيل مول - الأكشاك",
             brand_id=44249,
             brand_name="Flormar Trap",
             brand="Flormar Trap",
