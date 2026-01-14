@@ -24,6 +24,11 @@ class CenomiAPIClient:
     ):
         url = f"{self.base_url}{endpoint}"
 
+        # Debug: print the payload being sent
+        if json:
+            print(f"Sending to {url}:")
+            print(f"Payload: {json}")
+
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             response = await client.post(
                 url,
@@ -76,6 +81,8 @@ class CenomiAPIClient:
         lease_id: Optional[int],
         title: str,
         comment: str,
+        category: str,
+        subcategory: str,
     ):
         payload = {
             "tenant_profile_id": tenant_profile_id,
@@ -84,6 +91,8 @@ class CenomiAPIClient:
             "lease_id": lease_id,
             "title": title,
             "comment": comment,
+            "category": category,
+            "subcategory": subcategory,
         }
 
         return await self._post(
@@ -96,23 +105,35 @@ class CenomiAPIClient:
     # ---------------------------------------------------------
     async def create_lead_enquiry(
         self,
-        name: str,
+        first_name: str,
+        last_name: str,
+        company: str,
         email: str,
+        brand_name: str,
+        unit_type: str,
+        country_code: str,
         phone: str,
-        requested_min_area: Optional[int],
-        requested_max_area: Optional[int],
-        requested_rent_period: str,
-        property_ids: List[int],
-        phone_verified: Optional[bool],
+        company_address: str,
+        unique_property_id: int,
+        requested_lease_period: str,
+        requested_min_area: int,
+        phone_verified: bool,
+        country_code_landline: Optional[str] = None,
     ):
         payload = {
-            "name": name,
+            "first_name": first_name,
+            "last_name": last_name,
+            "company": company,
             "email": email,
+            "brand_name": brand_name,
+            "unit_type": unit_type,
+            "country_code": country_code,
             "phone": phone,
+            "country_code_landline": country_code_landline,
+            "company_address": company_address,
+            "unique_property_id": unique_property_id,
+            "requested_lease_period": requested_lease_period,
             "requested_min_area": requested_min_area,
-            "requested_max_area": requested_max_area,
-            "requested_rent_period": requested_rent_period,
-            "property_ids": property_ids,
             "phone_verified": phone_verified,
         }
 

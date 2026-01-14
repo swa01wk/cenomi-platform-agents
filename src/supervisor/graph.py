@@ -224,18 +224,38 @@ async def node_submit(state: AppState, registry: AgentRegistryStore, toolreg: To
         return state
 
     payload = state.get("ready_payload") or {}
-    # Use a generic submit tool based on service_type if you want.
-    # For PoC: if service_type == general_enquiry -> submit_general_enquiry else final_submit_lead_enquiry already ran.
-    service_type = payload.get("service_type")
 
-    if service_type == "general_enquiry":
-        tool = toolreg.get("submit_general_enquiry")
-        submitted = await tool(payload)
-    else:
-        # Lead enquiry final submit tool already runs in stage tools; return its status + lead_id
-        submitted = {"ok": True, "status": payload.get("status", "SUBMITTED"), "lead_id": payload.get("lead_id")}
+    # Execute submission_tools generically (tools that run only after user confirms)
+    submission_tools = payload.get("submission_tools") or []
+
+    if not submission_tools:
+        state["assistant_message"] = "No submission tool configured for this agent."
+        return state
+
+    submitted = {"ok": True, "status": "SUBMITTED"}
+
+    for tool_name in submission_tools:
+        tool = toolreg.get(tool_name)
+        if tool:
+            result = await tool(payload)
+            # Merge results (like lead_id, request_id, status) into submitted dict
+            if isinstance(result, dict):
+                submitted.update(result)
 
     state["submitted"] = submitted
+
+    # Check if submission was successful
+    if not submitted.get("ok", True):
+        # Submission failed - show error message
+        error_message = submitted.get("error", "Some error occurred, reach out to our team using their contact or email")
+        state["assistant_message"] = f"Some error occurred, reach out to our team using their contact or email"
+        state["phase"] = "done"
+
+        # Reset for new enquiry
+        state["active_agent_id"] = None
+        state["phase"] = "supervisor"
+        return state
+
     state["phase"] = "done"
 
     # Get agent config for personalized success message

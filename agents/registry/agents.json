@@ -1,65 +1,23 @@
 {
   "agents": [
     {
-      "agent_id": "string",
-      "name": "string",
-      "description": "string",
-      "service_type": "string",
-      "keywords": [
-        "string"
-      ],
-      "model": "gpt-4o-mini",
-      "system_prompt": "string",
-      "fields": [
-        {
-          "key": "string",
-          "type": "string",
-          "required": true,
-          "label": "string",
-          "hint": "string",
-          "choices": [
-            "string"
-          ],
-          "validator": "string",
-          "prompt": "string"
-        }
-      ],
-      "stages": [
-        {
-          "stage_id": "string",
-          "label": "string",
-          "required_fields": [
-            "string"
-          ],
-          "required_tools": [
-            "string"
-          ],
-          "optional_tools": [
-            "string"
-          ]
-        }
-      ],
-      "tools": [
-        "string"
-      ]
-    },
-    {
-      "agent_id": "lease_enquiry_agent2",
-      "name": "Lease Enquiry",
-      "description": "Collect lease details for leasing a property, validate contact info, optionally verify CR, and submit.",
-      "service_type": "lease_enquiry",
+      "agent_id": "lead_enquiry_submission_agent",
+      "name": "Lead Enquiry Submission Agent",
+      "description": "Collects comprehensive lead enquiry information including personal details, company information, brand details, and lease requirements.",
+      "service_type": "lead_enquiry_submission",
       "keywords": [
         "lead",
+        "enquiry",
+        "inquiry",
         "lease",
         "rent",
         "property",
-        "unit",
         "brand",
-        "kiosk",
-        "shop"
+        "company",
+        "submission"
       ],
       "model": "gpt-4o-mini",
-      "system_prompt": "You are a leasing enquiry assistant. Extract details naturally from conversation to submit a form. Do not invent values.",
+      "system_prompt": "You are a lead enquiry submission assistant. Extract details naturally from conversation to submit a comprehensive lead enquiry form. Do not invent values. Ask for missing required information in a conversational manner.",
       "fields": [
         {
           "key": "first_name",
@@ -82,43 +40,23 @@
           "prompt": null
         },
         {
-          "key": "email",
-          "type": "string",
-          "required": true,
-          "label": "Email",
-          "hint": null,
-          "choices": [],
-          "validator": "email_validator",
-          "prompt": null
-        },
-        {
-          "key": "phone",
-          "type": "string",
-          "required": true,
-          "label": "Phone number",
-          "hint": null,
-          "choices": null,
-          "validator": "phone_validator",
-          "prompt": null
-        },
-        {
-          "key": "company_name",
+          "key": "company",
           "type": "string",
           "required": true,
           "label": "Company name",
           "hint": null,
-          "choices": null,
+          "choices": [],
           "validator": null,
           "prompt": null
         },
         {
-          "key": "cr_number",
+          "key": "email",
           "type": "string",
-          "required": false,
-          "label": "CR number (optional)",
+          "required": true,
+          "label": "Email address",
           "hint": null,
-          "choices": null,
-          "validator": null,
+          "choices": [],
+          "validator": "email_validator",
           "prompt": null
         },
         {
@@ -127,17 +65,7 @@
           "required": true,
           "label": "Brand name",
           "hint": null,
-          "choices": null,
-          "validator": null,
-          "prompt": null
-        },
-        {
-          "key": "brand_name_ar",
-          "type": "string",
-          "required": false,
-          "label": "Brand name (Arabic, optional)",
-          "hint": null,
-          "choices": null,
+          "choices": [],
           "validator": null,
           "prompt": null
         },
@@ -148,52 +76,97 @@
           "label": "Unit type",
           "hint": null,
           "choices": [
-            "Kiosk",
-            "Shop",
-            "Restaurant",
-            "Office",
-            "Other"
+            "store",
+            "kiosk",
+            "shop",
+            "restaurant",
+            "office"
           ],
           "validator": null,
           "prompt": null
         },
         {
-          "key": "area",
-          "type": "number",
+          "key": "country_code",
+          "type": "string",
           "required": true,
-          "label": "Preferred area (sqm)",
-          "hint": "Size in square meters, not location",
-          "choices": null,
+          "label": "Country code for phone",
+          "hint": "e.g., +966 for Saudi Arabia",
+          "choices": [],
           "validator": null,
           "prompt": null
         },
         {
-          "key": "rent",
-          "type": "number",
+          "key": "phone",
+          "type": "string",
           "required": true,
-          "label": "Rent budget",
-          "hint": null,
-          "choices": null,
+          "label": "Phone number",
+          "hint": "Without country code",
+          "choices": [],
+          "validator": "phone_validator",
+          "prompt": null
+        },
+        {
+          "key": "country_code_landline",
+          "type": "string",
+          "required": false,
+          "label": "Country code for landline",
+          "hint": "e.g., +966 for Saudi Arabia",
+          "choices": [],
           "validator": null,
           "prompt": null
         },
         {
-          "key": "lease_period",
-          "type": "number",
+          "key": "company_address",
+          "type": "string",
           "required": true,
-          "label": "Lease period (months)",
+          "label": "Company address",
           "hint": null,
-          "choices": null,
+          "choices": [],
           "validator": null,
           "prompt": null
         },
         {
           "key": "unique_property_id",
+          "type": "integer",
+          "required": true,
+          "label": "Property ID",
+          "hint": "Unique identifier for the property",
+          "choices": [],
+          "validator": null,
+          "prompt": null
+        },
+        {
+          "key": "requested_lease_period",
           "type": "string",
           "required": true,
-          "label": "Property selection ID",
+          "label": "Requested lease period",
           "hint": null,
-          "choices": null,
+          "choices": [
+            "1_year",
+            "2_years",
+            "3_years",
+            "5_years"
+          ],
+          "validator": null,
+          "prompt": null
+        },
+        {
+          "key": "requested_min_area",
+          "type": "integer",
+          "required": true,
+          "label": "Requested minimum area (sqm)",
+          "hint": "Minimum area in square meters",
+          "choices": [],
+          "validator": null,
+          "prompt": null
+        },
+        {
+          "key": "phone_verified",
+          "type": "boolean",
+          "required": true,
+          "label": "Phone verified",
+          "hint": "Whether the phone number has been verified",
+          "choices": [],
           "validator": null,
           "prompt": null
         }
@@ -201,31 +174,32 @@
       "stages": [
         {
           "stage_id": "NEW_ENQUIRY",
-          "label": "Initial Lead Submission",
+          "label": "Collect Personal Information",
           "required_fields": [
             "first_name",
             "last_name",
+            "company",
             "email",
-            "phone",
-            "company_name",
             "brand_name",
             "unit_type",
-            "area",
-            "rent",
-            "lease_period",
-            "unique_property_id"
+            "country_code",
+            "phone",
+            "country_code_landline",
+            "company_address",
+            "unique_property_id",
+            "requested_lease_period",
+            "requested_min_area",
+            "phone_verified"
           ],
-          "required_tools": [
+          "required_tools": [],
+          "optional_tools": [],
+          "submission_tools": [
             "create_lead_enquiry"
-          ],
-          "optional_tools": [
-            "verify_cr_number"
           ]
         }
       ],
       "tools": [
-        "create_lead_enquiry",
-        "verify_cr_number"
+        "create_lead_enquiry"
       ]
     }
   ]

@@ -12,6 +12,12 @@ in the tool registry.
 from typing import Dict, Any, Callable, List
 import uuid
 import asyncio
+import os
+
+from src.tool_registry.cenomi_client_api import CenomiAPIClient
+
+# Cenomi API base URL
+CENOMI_API_BASE_URL = os.getenv("CENOMI_API_BASE_URL", "http://20.224.157.137:8000")
 
 
 # ============================================================================
@@ -38,15 +44,50 @@ async def verify_cr_number(payload: Dict[str, Any]) -> Dict[str, Any]:
 
 
 async def create_lead_enquiry(payload: Dict[str, Any]) -> Dict[str, Any]:
-    """Create lead enquiry in database."""
-    # Simulate async I/O (database write)
-    await asyncio.sleep(0.1)
-    # Real: write to DB with status NEW_ENQUIRY
-    return {
-        "ok": True,
-        "lead_id": f"LEAD-{uuid.uuid4().hex[:8].upper()}",
-        "status": "NEW_ENQUIRY"
-    }
+    """Create lead enquiry via Cenomi API."""
+    try:
+        client = CenomiAPIClient(base_url=CENOMI_API_BASE_URL)
+
+        # Call the API with the required fields from payload
+        result = await client.create_lead_enquiry(
+            first_name=payload.get("first_name"),
+            last_name=payload.get("last_name"),
+            company=payload.get("company"),
+            email=payload.get("email"),
+            brand_name=payload.get("brand_name"),
+            unit_type=payload.get("unit_type"),
+            country_code=payload.get("country_code"),
+            phone=payload.get("phone"),
+            company_address=payload.get("company_address"),
+            unique_property_id=payload.get("unique_property_id"),
+            requested_lease_period=payload.get("requested_lease_period"),
+            requested_min_area=payload.get("requested_min_area"),
+            phone_verified=payload.get("phone_verified"),
+            country_code_landline=payload.get("country_code_landline"),
+        )
+        # print(f"{result=}")
+        # Expected response: {'success': True, 'data': {'lead_enquiry_id': '...', 'lead_enquiry_number': ..., 'lead_enquiry_code': '...'}}
+        if result.get("success"):
+            data = result.get("data", {})
+            return {
+                "ok": True,
+                "lead_id": data.get("lead_enquiry_id"),
+                "lead_enquiry_code": data.get("lead_enquiry_code"),
+                "lead_enquiry_number": data.get("lead_enquiry_number"),
+                "status": "NEW_ENQUIRY"
+            }
+        else:
+            return {
+                "ok": False,
+                "error": result.get("message", "Unknown error"),
+                "status": "ERROR"
+            }
+    except Exception as e:
+        return {
+            "ok": False,
+            "error": str(e),
+            "status": "ERROR"
+        }
 
 
 async def upload_documents(payload: Dict[str, Any]) -> Dict[str, Any]:

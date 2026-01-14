@@ -355,7 +355,9 @@ def build_extraction_model(cfg: Dict[str, Any]):
         key = f["key"]
         ftype = f.get("type", "string")
 
-        if ftype == "number":
+        if ftype == "integer":
+            py_t = Optional[int]
+        elif ftype == "number":
             py_t = Optional[float]
         elif ftype == "boolean":
             py_t = Optional[bool]
@@ -407,6 +409,8 @@ async def extract_fields(
         (cfg.get("system_prompt") or "You are a helpful assistant collecting details conversationally.") + "\n\n"
         "FIELD DEFINITIONS:\n" + "\n".join(f"- {fd}" for fd in field_descriptions) + "\n\n"
         "Rules:\n"
+        "- Greet only using name, not company name, brand name or last name.\n"
+        "- Don't get confused between first name and last name.\n"
         "- User may provide one, a few, or all fields in one message.\n"
         "- Extract as many fields as you can.\n"
         "- If not present, return null.\n"
@@ -561,6 +565,11 @@ async def run_subagent(inputs: dict) -> dict:
                             "label": friendly_label(cfg, k)
                         })
                         continue
+
+                    # If phone validation passed, set phone_verified to True
+                    if k == "phone" and validator_name == "phone_validator":
+                        draft["phone_verified"] = True
+
                 except Exception as e:
                     validation_issues.append({
                         "key": k,
@@ -569,7 +578,7 @@ async def run_subagent(inputs: dict) -> dict:
                         "label": friendly_label(cfg, k)
                     })
                     continue
-            
+
             draft[k] = v
 
     # 1.5) If inline validation found issues, ask user to correct them
@@ -647,6 +656,11 @@ async def run_subagent(inputs: dict) -> dict:
 
     # 5) Ready payload
     payload = {"agent_id": cfg["agent_id"], "service_type": cfg.get("service_type"), **draft}
+
+    # Include submission_tools from stage so submit node knows what to execute
+    submission_tools = st.get("submission_tools") or []
+    payload["submission_tools"] = submission_tools
+
     natural_preview = await generate_confirmation_message(cfg, payload, conversation_history)
     return {
         "status": "ready",
