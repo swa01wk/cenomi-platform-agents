@@ -507,6 +507,13 @@ async def run_subagent(inputs: dict) -> dict:
 
     # 0) Attachments merge into the appropriate array field
     if attachments:
+        # Check if there's a file_path field in the schema (for single file validation)
+        spec_by_key = field_specs(cfg)
+        if "file_path" in spec_by_key and attachments:
+            # If file_path field exists, populate it with the first attachment
+            draft["file_path"] = attachments[0]
+        
+        # Also add to array field if one exists (for multiple documents)
         array_key = guess_array_field_key(cfg, required_fields)
         if array_key:
             existing = draft.get(array_key) or []
@@ -517,8 +524,46 @@ async def run_subagent(inputs: dict) -> dict:
                     existing.append(a)
             draft[array_key] = existing
 
-    # 1) Extract whatever user provided; merge into draft
+    # 0.5) Validate file_path if it exists and has a validator (even without user text)
     validation_issues: List[Dict[str, Any]] = []
+    
+    if draft.get("file_path"):
+        spec_by_key = field_specs(cfg)
+        field_spec = spec_by_key.get("file_path")
+        if field_spec and field_spec.get("validator") == "file_prompt_validator":
+            try:
+                validator_tool = get_validator_by_name("file_prompt_validator")
+                prompt = field_spec.get("prompt")
+                print("Invoking file_prompt_validator with:", draft.get("file_path"), "the prompt being used is:", prompt)
+                result = validator_tool.invoke({"pdf_path": draft.get("file_path"), "prompt": prompt})
+                
+                # Check verdict based on score
+                if result.score < 50:
+                    verdict = f"The document provided has scored {result.score} which is below the acceptable threshold of 50. Please provide a clearer document."
+                    print(verdict)
+                    # Add to validation issues and remove the path from draft
+                    validation_issues.append({
+                        "key": "file_path",
+                        "kind": "invalid",
+                        "message": verdict,
+                        "label": friendly_label(cfg, "file_path")
+                    })
+                    # Remove file_path from draft since it failed validation
+                    draft.pop("file_path", None)
+                else:
+                    verdict = f"The document has been successfully validated with a score of {result.score}."
+                    print(verdict)
+            except Exception as e:
+                validation_issues.append({
+                    "key": "file_path",
+                    "kind": "invalid",
+                    "message": f"Validation error: {str(e)}",
+                    "label": friendly_label(cfg, "file_path")
+                })
+                # Remove file_path from draft on error
+                draft.pop("file_path", None)
+
+    # 1) Extract whatever user provided; merge into draft
     
     if user_text.strip():
         extracted = await extract_fields(cfg, user_text, draft, conversation_history)
@@ -537,15 +582,30 @@ async def run_subagent(inputs: dict) -> dict:
                 try:
                     if validator_name == "field_prompt_validator":
                         validator_tool = get_validator_by_name(validator_name)
-                        prompt = field_spec.get("Prompt") or field_spec.get("hint") or f"valid {field_spec.get('label', k)}"
+                        prompt = field_spec.get("prompt")
                         result = validator_tool.invoke({"field": v, "prompt": prompt})
-                    elif validator_name == "file_prompt_validator":
+                    elif validator_name == "file_prompt_validator" and extracted.get("file_path"):
                         validator_tool = get_validator_by_name(validator_name)
-                        prompt = field_spec.get("prompt")  # Add this line
+                        prompt = field_spec.get("prompt")
                         print("Invoking file_prompt_validator with:", extracted.get("file_path"), "the prompt being used is:", prompt, "tool being used:", validator_tool)
                         result = validator_tool.invoke({"pdf_path": extracted.get("file_path"), "prompt": prompt})
                         
-                    else:
+                        # Check verdict based on score
+                        if result.score < 50:
+                            verdict = f"The document provided has scored {result.score} which is below the acceptable threshold of 50. Please provide a clearer document."
+                            print(verdict)
+                            # Add to validation issues and skip storing the path
+                            validation_issues.append({
+                                "key": k,
+                                "kind": "invalid",
+                                "message": verdict,
+                                "label": friendly_label(cfg, k)
+                            })
+                            continue
+                        else:
+                            verdict = f"The document has been successfully validated with a score of {result.score}."
+                            print(verdict)
+                    else:   
                         # For standard validators (email, phone, url, etc.)
                         validator_tool = get_validator_by_name(validator_name)
                         
