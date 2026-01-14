@@ -170,8 +170,28 @@ async def generate_validation_message(
         missing = [i for i in issues if i.get("kind") == "missing"]
         invalid = [i for i in issues if i.get("kind") == "invalid"]
 
-        # Build context of what's already collected
-        collected_fields = [k for k, v in draft.items() if v not in (None, "", [])]
+        # Build field metadata
+        field_metadata = {f["key"]: f for f in agent_config.get("fields", [])}
+
+        # Build context of what's already collected WITH VALUES (to prevent hallucination)
+        collected_items = []
+        for k, v in draft.items():
+            if v in (None, "", []):
+                continue
+            field_def = field_metadata.get(k, {})
+            label = field_def.get("label", k.replace("_", " ").title())
+            # Truncate long values for readability
+            if isinstance(v, str) and len(v) > 100:
+                display_val = v[:100] + "..."
+            elif isinstance(v, list):
+                display_val = f"{len(v)} item(s)"
+            elif isinstance(v, dict):
+                display_val = "(object)"
+            else:
+                display_val = str(v)
+            collected_items.append(f"- {label}: {display_val}")
+
+        collected_summary = "\n".join(collected_items) if collected_items else "Nothing yet"
 
         agent_name = agent_config.get("name", "Assistant")
         agent_description = agent_config.get("description", "")
@@ -180,8 +200,6 @@ async def generate_validation_message(
         # Get last user message for context (FIX: use -1 for last message, not -2)
         last_message = conversation_history[-1]["content"] if len(conversation_history) >= 1 else "First interaction"
 
-        # Build field metadata to include choices for missing fields
-        field_metadata = {f["key"]: f for f in agent_config.get("fields", [])}
         missing_with_choices = []
         for issue in missing:
             key = issue.get("key")
@@ -206,8 +224,8 @@ YOUR ROLE/PURPOSE: {agent_description}
 
 SYSTEM INSTRUCTIONS: {system_prompt}
 
-WHAT YOU'VE ALREADY COLLECTED:
-{', '.join(collected_fields) if collected_fields else 'Nothing yet'}
+WHAT YOU'VE ALREADY COLLECTED (field name: value):
+{collected_summary}
 
 WHAT YOU STILL NEED:
 
@@ -225,7 +243,7 @@ CRITICAL INSTRUCTIONS:
 2. If they ask "what options do I have" or "what are the choices" for a field with available_options, LIST THOSE OPTIONS
 3. Then naturally transition to asking for what you need
 4. Be conversational and responsive - don't ignore what they said
-5. If they provided some info, acknowledge it briefly before asking for more
+5. If they provided some info, acknowledge it sometimes briefly before asking for more
 6. Sound like a real person having a conversation, not a form-filling robot
 
 Examples of GOOD responses:
