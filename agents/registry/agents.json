@@ -203,44 +203,6 @@
       ]
     },
     {
-      "agent_id": "file_validation_v1",
-      "name": "file_validator",
-      "description": "Validates whether an uploaded file is relevant",
-      "service_type": "file validation",
-      "keywords": [
-        "validation",
-        "relevancy",
-        "file upload",
-        "file validation"
-      ],
-      "model": "gpt-4o-mini",
-      "system_prompt": "Take the required fields as input from the user and validate the file content.",
-      "fields": [
-        {
-          "key": "file_path",
-          "type": "string",
-          "required": true,
-          "label": "File Path",
-          "hint": "Absolute or relative path to the uploaded file",
-          "choices": null,
-          "validator": "file_prompt_validator",
-          "prompt": "Check whether the document contains architectural information and images"
-        }
-      ],
-      "stages": [
-        {
-          "stage_id": "collection",
-          "label": "Collect the file path",
-          "required_fields": [
-            "file_path"
-          ],
-          "required_tools": [],
-          "optional_tools": []
-        }
-      ],
-      "tools": []
-    },
-    {
       "agent_id": "fitout_architectural_drawing_agent",
       "name": "Fit-Out Architectural Drawing Agent",
       "description": "Collects required information for fit-out architectural drawing submission, uploads drawings, and submits the service request.",
@@ -274,7 +236,9 @@
           "required": true,
           "label": "Request ID",
           "hint": "Unique identifier for the request",
-          "choices": null,
+          "choices": [
+            "30dd879c-ee2f-11db-8314-0800200c9a66"
+          ],
           "validator": null,
           "prompt": null
         },
@@ -378,7 +342,9 @@
           "required": true,
           "label": "Cenomi contact role",
           "hint": null,
-          "choices": null,
+          "choices": [
+            "Test Role"
+          ],
           "validator": null,
           "prompt": null
         },
@@ -387,10 +353,10 @@
           "type": "string",
           "required": true,
           "label": "File Path",
-          "hint": "Path to the PDF file to upload",
+          "hint": "Upload the file",
           "choices": null,
           "validator": "file_prompt_validator",
-          "prompt": "Check whether the document contains information about the data guidelines and pipelines"
+          "prompt": "Check whether the document contains information about the architectural drawing layout"
         },
         {
           "key": "service_category",
@@ -430,11 +396,13 @@
         },
         {
           "key": "tenant_profile_id",
-          "type": "number",
+          "type": "string",
           "required": true,
           "label": "Tenant profile ID",
           "hint": null,
-          "choices": null,
+          "choices": [
+            "2153"
+          ],
           "validator": null,
           "prompt": null
         },
@@ -444,37 +412,45 @@
           "required": true,
           "label": "Lease code",
           "hint": null,
-          "choices": null,
+          "choices": [
+            "t0108240"
+          ],
           "validator": null,
           "prompt": null
         },
         {
           "key": "lease_id",
-          "type": "number",
+          "type": "string",
           "required": true,
           "label": "Lease ID",
           "hint": null,
-          "choices": null,
+          "choices": [
+            "96225"
+          ],
           "validator": null,
           "prompt": null
         },
         {
           "key": "contract_id",
-          "type": "number",
+          "type": "string",
           "required": true,
           "label": "Contract ID",
           "hint": null,
-          "choices": null,
+          "choices": [
+            "96225"
+          ],
           "validator": null,
           "prompt": null
         },
         {
           "key": "property_id",
-          "type": "number",
+          "type": "string",
           "required": true,
           "label": "Property ID",
           "hint": null,
-          "choices": null,
+          "choices": [
+            "47"
+          ],
           "validator": null,
           "prompt": null
         },
@@ -484,17 +460,21 @@
           "required": true,
           "label": "Mall name",
           "hint": null,
-          "choices": null,
+          "choices": [
+            "Nakheel Mall"
+          ],
           "validator": null,
           "prompt": null
         },
         {
           "key": "brand_id",
-          "type": "number",
+          "type": "string",
           "required": true,
           "label": "Brand ID",
           "hint": null,
-          "choices": null,
+          "choices": [
+            "44249"
+          ],
           "validator": null,
           "prompt": null
         },
@@ -504,7 +484,9 @@
           "required": true,
           "label": "Brand name",
           "hint": null,
-          "choices": null,
+          "choices": [
+            "Flormar Trap"
+          ],
           "validator": null,
           "prompt": null
         },
@@ -514,7 +496,9 @@
           "required": true,
           "label": "Request title",
           "hint": null,
-          "choices": null,
+          "choices": [
+            "Request for Architectural Drawings"
+          ],
           "validator": null,
           "prompt": null
         },
@@ -524,18 +508,22 @@
           "required": false,
           "label": "Additional comments",
           "hint": null,
-          "choices": null,
+          "choices": [
+            "Test service request with newly uploaded document"
+          ],
           "validator": null,
           "prompt": null
         },
         {
           "key": "documents_ids",
-          "type": "array",
+          "type": "string",
           "required": true,
           "label": "Uploaded document IDs",
-          "hint": null,
-          "choices": null,
-          "validator": "non_empty_array",
+          "hint": "GUIDs of document",
+          "choices": [
+            "65556a63-ba39-4fa6-90fa-8ca902f4d166"
+          ],
+          "validator": null,
           "prompt": null
         },
         {

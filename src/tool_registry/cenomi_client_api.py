@@ -178,74 +178,74 @@ class CenomiAPIClient:
             json=payload,
         )
 
-if __name__ == "__main__":
-    import asyncio
-    import os
-    from dotenv import load_dotenv
+# if __name__ == "__main__":
+#     import asyncio
+#     import os
+#     from dotenv import load_dotenv
 
-    load_dotenv()
+#     load_dotenv()
 
-    async def main():
-        client = CenomiAPIClient()
+#     async def main():
+#         client = CenomiAPIClient()
 
-        # Test fitout submission with individual arguments
-        response = await client.submit_fitout_request(
-            service_category="FIT_OUT_DRAWING",
-            sub_category="ARCHITECTURAL_DRAWING",
-            drawing_type_obj={
-                "documentType": "ARCHITECTURAL_DRAWING",
-                "documentTypeId": "FIT_ARCH_DRW",
-                "document_category_en": "Architectural Drawings",
-                "documents": [
-                    {
-                        "document_name_en": "Architectural Layout",
-                        "documentTypeId": "FIT_ARCH_DRW_ARCH_LAYOUT",
-                        "status": "uploaded",
-                        "comment": None
-                    }
-                ],
-                "srDetails": {}
-            },
-            documents_ids=["65556a63-ba39-4fa6-90fa-8ca902f4d166"],
-            document_type_id="FIT_ARCH_DRW",
-            document_status_list=[
-                {
-                    "document_name_en": "Architectural Layout",
-                    "documentTypeId": "FIT_ARCH_DRW_ARCH_LAYOUT",
-                    "status": "uploaded",
-                    "comment": None
-                }
-            ],
-            title="Request for Architectural Drawings",
-            comment="Test service request with newly uploaded document",
-            document_id_history=[
-                {
-                    "document_ids": ["65556a63-ba39-4fa6-90fa-8ca902f4d166"],
-                    "docNames": [
-                        {
-                            "document_name_en": "Architectural Layout",
-                            "documentTypeId": "FIT_ARCH_DRW_ARCH_LAYOUT",
-                            "status": "uploaded",
-                            "comment": None
-                        }
-                    ]
-                }
-            ],
-            tenant_profile_id=2153,
-            lease_code="t0108240",
-            status="SUBMITTED",
-            lease_id=96225,
-            mall="Nakheel Mall",
-            brand_id=44249,
-            brand_name="Flormar Trap",
-            brand="Flormar Trap",
-            lease="t0108240",
-            lease_brand_mall="t0108240-Flormar Trap-Nakheel Mall",
-            contract_id=96225,
-            property_id=47,
-            company_name="2153",
-            file=""
-        )
-        print("Fitout Submission Response:", response)
+#         # Test fitout submission with individual arguments
+#         response = await client.submit_fitout_request(
+#             service_category="FIT_OUT_DRAWING",
+#             sub_category="ARCHITECTURAL_DRAWING",
+#             drawing_type_obj={
+#                 "documentType": "ARCHITECTURAL_DRAWING",
+#                 "documentTypeId": "FIT_ARCH_DRW",
+#                 "document_category_en": "Architectural Drawings",
+#                 "documents": [
+#                     {
+#                         "document_name_en": "Architectural Layout",
+#                         "documentTypeId": "FIT_ARCH_DRW_ARCH_LAYOUT",
+#                         "status": "uploaded",
+#                         "comment": None
+#                     }
+#                 ],
+#                 "srDetails": {}
+#             },
+#             documents_ids=["65556a63-ba39-4fa6-90fa-8ca902f4d166"],
+#             document_type_id="FIT_ARCH_DRW",
+#             document_status_list=[
+#                 {
+#                     "document_name_en": "Architectural Layout",
+#                     "documentTypeId": "FIT_ARCH_DRW_ARCH_LAYOUT",
+#                     "status": "uploaded",
+#                     "comment": None
+#                 }
+#             ],
+#             title="Request for Architectural Drawings",
+#             comment="Test service request with newly uploaded document",
+#             document_id_history=[
+#                 {
+#                     "document_ids": ["65556a63-ba39-4fa6-90fa-8ca902f4d166"],
+#                     "docNames": [
+#                         {
+#                             "document_name_en": "Architectural Layout",
+#                             "documentTypeId": "FIT_ARCH_DRW_ARCH_LAYOUT",
+#                             "status": "uploaded",
+#                             "comment": None
+#                         }
+#                     ]
+#                 }
+#             ],
+#             tenant_profile_id=2153,
+#             lease_code="t0108240",
+#             status="SUBMITTED",
+#             lease_id=96225,
+#             mall="Nakheel Mall",
+#             brand_id=44249,
+#             brand_name="Flormar Trap",
+#             brand="Flormar Trap",
+#             lease="t0108240",
+#             lease_brand_mall="t0108240-Flormar Trap-Nakheel Mall",
+#             contract_id=96225,
+#             property_id=47,
+#             company_name="2153",
+#             file=""
+#         )
+#         print("Fitout Submission Response:", response)
 
-    asyncio.run(main())
+#     asyncio.run(main())

@@ -122,6 +122,88 @@ async def final_submit_lead_enquiry(payload: Dict[str, Any]) -> Dict[str, Any]:
 
 
 # ============================================================================
+# FITOUT SUBMISSION TOOLS
+# ============================================================================
+
+async def submit_fitout_request(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Submit fitout architectural drawing request via Cenomi API."""
+    try:
+        client = CenomiAPIClient(base_url=CENOMI_API_BASE_URL)
+
+        # Parse drawing_type_obj from string to dict if needed
+        drawing_type_obj = payload.get("drawing_type_obj")
+        if isinstance(drawing_type_obj, str):
+            import json
+            drawing_type_obj = json.loads(drawing_type_obj)
+
+        # Build document_status_list from drawing_type_obj documents
+        document_status_list = drawing_type_obj.get("documents", [])
+
+        # Get document_ids (could be string or list)
+        documents_ids = payload.get("documents_ids", [])
+        if isinstance(documents_ids, str):
+            documents_ids = [documents_ids]
+
+        # Build document_id_history
+        document_id_history = [{
+            "document_ids": documents_ids,
+            "docNames": document_status_list
+        }]
+
+        # Construct lease_brand_mall
+        lease_code = payload.get("lease_code", "")
+        brand_name = payload.get("brand_name", "")
+        mall = payload.get("mall", "")
+        lease_brand_mall = f"{lease_code}-{brand_name}-{mall}"
+
+        result = await client.submit_fitout_request(
+            service_category=payload.get("service_category"),
+            sub_category=payload.get("sub_category"),
+            drawing_type_obj=drawing_type_obj,
+            documents_ids=documents_ids,
+            document_type_id=payload.get("document_type_id"),
+            document_status_list=document_status_list,
+            title=payload.get("title", "Request for Architectural Drawings"),
+            comment=payload.get("comment", ""),
+            document_id_history=document_id_history,
+            tenant_profile_id=int(payload.get("tenant_profile_id", 0)),
+            lease_code=lease_code,
+            status=payload.get("status", "SUBMITTED"),
+            lease_id=int(payload.get("lease_id", 0)),
+            mall=mall,
+            brand_id=int(payload.get("brand_id", 0)),
+            brand_name=brand_name,
+            brand=brand_name,
+            lease=lease_code,
+            lease_brand_mall=lease_brand_mall,
+            contract_id=int(payload.get("contract_id", 0)),
+            property_id=int(payload.get("property_id", 0)),
+            company_name=str(payload.get("tenant_profile_id", "")),
+            file=""
+        )
+
+        if result.get("success"):
+            data = result.get("data", {})
+            return {
+                "ok": True,
+                "request_id": data.get("service_request_id"),
+                "status": "SUBMITTED"
+            }
+        else:
+            return {
+                "ok": False,
+                "error": result.get("message", "Unknown error"),
+                "status": "ERROR"
+            }
+    except Exception as e:
+        return {
+            "ok": False,
+            "error": str(e),
+            "status": "ERROR"
+        }
+
+
+# ============================================================================
 # GENERAL ENQUIRY TOOLS
 # ============================================================================
 
@@ -159,6 +241,9 @@ CUSTOM_FUNCTIONS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "upload_documents": upload_documents,
     "validate_documents": validate_documents,
     "final_submit_lead_enquiry": final_submit_lead_enquiry,
+
+    # Fitout submission tools
+    "submit_fitout_request": submit_fitout_request,
 
     # General enquiry tools
     "save_draft_general_enquiry": save_draft_general_enquiry,

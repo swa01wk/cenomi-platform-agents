@@ -515,7 +515,18 @@ async def run_subagent(inputs: dict) -> dict:
 
     tool_events: List[Dict[str, Any]] = []
 
-    # 0) Attachments merge into the appropriate array field
+    # 0) Auto-fill fields that have exactly one choice (no need to ask user)
+    spec_by_key = field_specs(cfg)
+    for key, field_def in spec_by_key.items():
+        # Skip if already filled in draft
+        if key in draft and draft[key] not in (None, "", []):
+            continue
+        choices = field_def.get("choices")
+        # Auto-fill if exactly one choice exists
+        if choices and len(choices) == 1:
+            draft[key] = choices[0]
+
+    # 0.1) Attachments merge into the appropriate array field
     if attachments:
         # Check if there's a file_path field in the schema (for single file validation)
         spec_by_key = field_specs(cfg)

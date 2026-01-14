@@ -229,7 +229,7 @@ file_prompt_validator = StructuredTool.from_function(
 # =========================================================
 import requests
 from typing import Optional
-
+import os
 def upload_document(
     file_path: str,
     file_extension: str,
@@ -247,9 +247,16 @@ def upload_document(
 ) -> dict:
     print(f"upload documents invoked")
     # Prepare the files for upload
-    with open(file_path, 'rb') as f:
+    if not os.path.exists(file_path):
+        return {
+            "error": f"File not found: {file_path}"
+        }
+
+    filename = os.path.basename(file_path)
+
+    with open(file_path, "rb") as f:
         files = {
-            'document': (file_path.split('\\')[-1], f, 'application/pdf')
+            "document": (filename, f)
         }
         
         # Prepare the form data
