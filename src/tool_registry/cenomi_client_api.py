@@ -3,13 +3,12 @@ from typing import Optional, List
 
 import httpx
 
-
 class CenomiAPIClient:
     """
     Centralized async client for Cenomi backend APIs.
     """
 
-    def __init__(self, base_url: str, timeout: int = 60):
+    def __init__(self, base_url: str = "http://20.224.157.137:8000", timeout: int = 60):
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
 
@@ -75,26 +74,64 @@ class CenomiAPIClient:
     # ---------------------------------------------------------
     async def submit_fitout_request(
         self,
-        tenant_profile_id: Optional[int],
-        lease_code: str,
-        status: str,
-        lease_id: Optional[int],
+        service_category: str,
+        sub_category: str,
+        drawing_type_obj: dict,
+        documents_ids: List[str],
+        document_type_id: str,
+        document_status_list: List[dict],
         title: str,
         comment: str,
-        category: str,
-        subcategory: str,
+        document_id_history: List[dict],
+        tenant_profile_id: int,
+        lease_code: str,
+        status: str,
+        lease_id: int,
+        mall: str,
+        mall_ar: str,
+        brand_id: int,
+        brand_name: str,
+        brand: str,
+        lease: str,
+        lease_brand_mall: str,
+        contract_id: int,
+        property_id: int,
+        company_name: str,
+        file: str = "",
     ):
+        """
+        Submit a fitout request with all individual parameters.
+        """
         payload = {
+            "service_category": service_category,
+            "sub_category": sub_category,
+            "payload": {
+                "drawing_type_obj": drawing_type_obj,
+                "documents_ids": documents_ids,
+                "document_type_id": document_type_id,
+                "document_status_list": document_status_list,
+                "comment": comment,
+                "title": title,
+                "document_id_history": document_id_history,
+            },
+            "file": file,
+            "mall": mall,
+            "mall_ar": mall_ar,
+            "brand_id": brand_id,
+            "brand_name": brand_name,
+            "brand": brand,
+            "lease": lease,
+            "lease_brand_mall": lease_brand_mall,
+            "contract_id": contract_id,
+            "property_id": property_id,
+            "company_name": company_name,
             "tenant_profile_id": tenant_profile_id,
             "lease_code": lease_code,
             "status": status,
             "lease_id": lease_id,
             "title": title,
             "comment": comment,
-            "category": category,
-            "subcategory": subcategory,
         }
-
         return await self._post(
             endpoint="/v1/service-requests",
             json=payload,
@@ -141,3 +178,80 @@ class CenomiAPIClient:
             endpoint="/v1/lead-enquiries",
             json=payload,
         )
+
+if __name__ == "__main__":
+    import asyncio
+    import os
+    from dotenv import load_dotenv
+
+    load_dotenv()
+
+    async def main():
+        client = CenomiAPIClient()
+
+        # Test fitout submission with individual arguments
+        response = await client.submit_fitout_request(
+            service_category="FIT_OUT_DRAWING",
+            sub_category="ARCHITECTURAL_DRAWING",
+            drawing_type_obj={
+                "documentType": "ARCHITECTURAL_DRAWING",
+                "documentTypeId": "FIT_ARCH_DRW",
+                "document_category_en": "Architectural Drawings",
+                "document_category_ar": "رسومات معمارية",
+                "documents": [
+                    {
+                        "document_name_en": "Architectural Layout",
+                        "document_name_ar": "التخطيط المعماري",
+                        "documentTypeId": "FIT_ARCH_DRW_ARCH_LAYOUT",
+                        "status": "uploaded",
+                        "comment": None
+                    }
+                ],
+                "srDetails": {}
+            },
+            documents_ids=["65556a63-ba39-4fa6-90fa-8ca902f4d166"],
+            document_type_id="FIT_ARCH_DRW",
+            document_status_list=[
+                {
+                    "document_name_en": "Architectural Layout",
+                    "document_name_ar": "التخطيط المعماري",
+                    "documentTypeId": "FIT_ARCH_DRW_ARCH_LAYOUT",
+                    "status": "uploaded",
+                    "comment": None
+                }
+            ],
+            title="Request for Architectural Drawings",
+            comment="Test service request with newly uploaded document",
+            document_id_history=[
+                {
+                    "document_ids": ["65556a63-ba39-4fa6-90fa-8ca902f4d166"],
+                    "docNames": [
+                        {
+                            "document_name_en": "Architectural Layout",
+                            "document_name_ar": "التخطيط المعماري",
+                            "documentTypeId": "FIT_ARCH_DRW_ARCH_LAYOUT",
+                            "status": "uploaded",
+                            "comment": None
+                        }
+                    ]
+                }
+            ],
+            tenant_profile_id=2153,
+            lease_code="t0108240",
+            status="SUBMITTED",
+            lease_id=96225,
+            mall="Nakheel Mall",
+            mall_ar="النخيل مول - الأكشاك",
+            brand_id=44249,
+            brand_name="Flormar Trap",
+            brand="Flormar Trap",
+            lease="t0108240",
+            lease_brand_mall="t0108240-Flormar Trap-Nakheel Mall",
+            contract_id=96225,
+            property_id=47,
+            company_name="2153",
+            file=""
+        )
+        print("Fitout Submission Response:", response)
+
+    asyncio.run(main())
