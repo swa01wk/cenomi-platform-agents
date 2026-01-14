@@ -286,6 +286,55 @@
       "metadata": {
         "created_at": "2026-01-14T03:33:53.315275+00:00"
       }
+    },
+    {
+      "id": "tool_b5e166f5-5319-43f7-925a-29c3f5700335",
+      "type": "custom_function",
+      "name": "submit_fitout_request",
+      "description": "Submit a fit-out service request for a tenant lease",
+      "input_schema": {
+        "properties": {
+          "tenant_profile_id": {
+            "type": "string",
+            "description": "Tenant profile identifier"
+          },
+          "lease_code": {
+            "type": "string",
+            "description": "Lease code associated with the tenant"
+          },
+          "status": {
+            "type": "string",
+            "description": "Current status of the service request"
+          },
+          "lease_id": {
+            "type": "string",
+            "description": "Lease ID"
+          },
+          "title": {
+            "type": "string",
+            "description": "Title of the fit-out request"
+          },
+          "comment": {
+            "type": "string",
+            "description": "Detailed description of the request"
+          },
+          "category": {
+            "type": "string",
+            "description": "Primary category of the service request"
+          },
+          "subcategory": {
+            "type": "string",
+            "description": "Subcategory of the service request"
+          }
+        }
+      },
+      "output_schema": {
+        "additionalProp1": {}
+      },
+      "function": "submit_fitout_request",
+      "metadata": {
+        "created_at": "2026-01-14T04:41:37.236007+00:00"
+      }
     }
   ]
 }
