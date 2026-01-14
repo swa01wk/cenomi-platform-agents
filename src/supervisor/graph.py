@@ -181,6 +181,9 @@ async def node_call_subagent(state: AppState, registry: AgentRegistryStore, tool
     attachments = state.get("turn_attachments", []) or []
     conversation_history = state.get("messages", [])
 
+    # Get locked fields for this agent (manually edited by user)
+    locked_fields = state.get("locked_fields", {}).get(agent_id, [])
+
     result = await run_subagent.ainvoke({
         "agent_cfg": cfg,
         "user_text": msg,
@@ -189,6 +192,7 @@ async def node_call_subagent(state: AppState, registry: AgentRegistryStore, tool
         "attachments": attachments,
         "conversation_history": conversation_history,
         "tool_runner": atool_runner_factory(toolreg, state),
+        "locked_fields": locked_fields,
     })
 
     drafts[agent_id] = result.get("draft", draft)
@@ -247,8 +251,7 @@ async def node_submit(state: AppState, registry: AgentRegistryStore, toolreg: To
     # Check if submission was successful
     if not submitted.get("ok", True):
         # Submission failed - show error message
-        error_message = submitted.get("error", "Some error occurred, reach out to our team using their contact or email")
-        state["assistant_message"] = f"Some error occurred, reach out to our team using their contact or email"
+        state["assistant_message"] = "Some error occurred, reach out to our team using their contact or email"
         state["phase"] = "done"
 
         # Reset for new enquiry

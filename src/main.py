@@ -1,6 +1,8 @@
 import uuid
-from typing import Dict, Optional, List
+import json
+from typing import Dict, Optional, List, Any
 from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
@@ -34,6 +36,7 @@ def default_state(session_id: str) -> AppState:
         "needs_service_choice": True,
         "drafts": {},
         "stage_by_agent": {},
+        "locked_fields": {},
         "ready_payload": None,
         "assistant_message": "Hi! What type of service request is this?",
         "submitted": None,
@@ -53,6 +56,12 @@ class ChatIn(BaseModel):
     session_id: str
     message: str
     attachments: Optional[List[str]] = Field(default=None, description="Optional list of uploaded file references")
+
+class UpdateDraftIn(BaseModel):
+    session_id: str
+    agent_id: str
+    field: str
+    value: Any
 
 @app.post("/v1/chat")
 async def chat(body: ChatIn):
@@ -83,6 +92,130 @@ async def chat(body: ChatIn):
         "ready_payload": new_state.get("ready_payload"),
         "submitted": new_state.get("submitted"),
         "last_tool_events": new_state.get("last_tool_events", []),
+    }
+
+@app.post("/v1/chat/stream")
+async def chat_stream(body: ChatIn):
+    """Streaming version of chat endpoint using Server-Sent Events (SSE)"""
+    sid = body.session_id
+    if sid not in SESSIONS:
+        SESSIONS[sid] = default_state(sid)
+
+    state = SESSIONS[sid]
+    state["messages"].append({"role": "user", "content": body.message})
+    state["turn_attachments"] = body.attachments or []
+
+    async def event_generator():
+        """Generate SSE events from LangGraph stream"""
+        final_state = None
+
+        # Stream events from the graph
+        async for event in GRAPH.astream(state):
+            # LangGraph streams events like {"node_name": state_update}
+            for node_name, node_state in event.items():
+                # Send assistant message chunks if available
+                if "assistant_message" in node_state:
+                    msg = node_state.get("assistant_message", "")
+                    if msg:
+                        yield f"data: {json.dumps({'type': 'message', 'content': msg})}\n\n"
+
+                # Update final state
+                final_state = node_state
+
+        # After streaming completes, send final state
+        if final_state:
+            assistant_msg = final_state.get("assistant_message", "")
+            final_state["messages"].append({"role": "assistant", "content": assistant_msg})
+            final_state["turn_attachments"] = []
+            SESSIONS[sid] = final_state
+
+            # Send complete state as final event
+            yield f"data: {json.dumps({'type': 'complete', 'state': {
+                'phase': final_state.get('phase'),
+                'active_agent_id': final_state.get('active_agent_id'),
+                'drafts': final_state.get('drafts'),
+                'stage_by_agent': final_state.get('stage_by_agent'),
+                'ready_payload': final_state.get('ready_payload'),
+                'submitted': final_state.get('submitted'),
+                'last_tool_events': final_state.get('last_tool_events', []),
+            }})}\n\n"
+
+        yield "data: [DONE]\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+@app.post("/v1/draft/update")
+async def update_draft(body: UpdateDraftIn):
+    """Update a specific field in the draft from frontend"""
+    sid = body.session_id
+    if sid not in SESSIONS:
+        return {"error": "Session not found"}, 404
+
+    state = SESSIONS[sid]
+
+    # Ensure drafts dict exists for the agent
+    if "drafts" not in state:
+        state["drafts"] = {}
+
+    agent_id = body.agent_id
+    if agent_id not in state["drafts"]:
+        state["drafts"][agent_id] = {}
+
+    # Update the field value
+    state["drafts"][agent_id][body.field] = body.value
+
+    # Optional: Run field validator if configured
+    agents = await registry_store.alist_agents()
+    agent_config = next((a for a in agents if a["agent_id"] == agent_id), None)
+
+    validation_error = None
+    if agent_config:
+        # Find field spec
+        field_spec = next((f for f in agent_config.get("fields", []) if f["key"] == body.field), None)
+        if field_spec and field_spec.get("validator"):
+            from src.tool_registry.prebuilt_tools import get_validator_by_name
+            try:
+                validator_name = field_spec["validator"]
+                validator_tool = get_validator_by_name(validator_name)
+
+                # Run validator
+                if hasattr(validator_tool, 'args_schema') and validator_tool.args_schema:
+                    result = validator_tool.invoke({body.field: body.value})
+                else:
+                    result = validator_tool.invoke(body.value)
+
+                # Check if validation failed
+                if isinstance(result, dict) and not result.get("valid", True):
+                    validation_error = result.get("reason", "Validation failed")
+                    # Don't store invalid value
+                    del state["drafts"][agent_id][body.field]
+            except Exception as e:
+                validation_error = f"Validation error: {str(e)}"
+                del state["drafts"][agent_id][body.field]
+
+    # If validation passed, mark field as locked (manually edited)
+    if not validation_error:
+        if "locked_fields" not in state:
+            state["locked_fields"] = {}
+        if agent_id not in state["locked_fields"]:
+            state["locked_fields"][agent_id] = []
+        if body.field not in state["locked_fields"][agent_id]:
+            state["locked_fields"][agent_id].append(body.field)
+
+    SESSIONS[sid] = state
+
+    if validation_error:
+        return {
+            "success": False,
+            "error": validation_error,
+            "drafts": state.get("drafts")
+        }
+
+    return {
+        "success": True,
+        "drafts": state.get("drafts"),
+        "phase": state.get("phase"),
+        "active_agent_id": state.get("active_agent_id")
     }
 
 if __name__ == "__main__":
