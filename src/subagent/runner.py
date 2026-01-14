@@ -364,6 +364,8 @@ def build_extraction_model(cfg: Dict[str, Any]):
         elif ftype == "array":
             # IMPORTANT: give items a concrete type
             py_t = Optional[List[str]]
+        elif ftype == "object":
+            py_t = Optional[Dict[str, Any]]
         else:
             py_t = Optional[str]
 
@@ -396,8 +398,16 @@ async def extract_fields(
             desc += f" - {hint}"
         if choices:
             desc += f" - must be one of: {', '.join(choices)}"
-        if ftype == "number":
-            desc += " - must be a number"
+        if ftype == "integer":
+            desc += " - must be an integer (whole number)"
+        elif ftype == "number":
+            desc += " - must be a number (can include decimals)"
+        elif ftype == "boolean":
+            desc += " - must be true or false"
+        elif ftype == "object":
+            desc += " - must be a JSON object/dictionary"
+        elif ftype == "array":
+            desc += " - must be a list/array"
 
         field_descriptions.append(desc)
 

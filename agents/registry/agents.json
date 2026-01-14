@@ -203,195 +203,6 @@
       ]
     },
     {
-      "agent_id": "fit_out_agent_v1",
-      "name": "fit_out_agent",
-      "description": "Accepts documents and relevant details of the documents as input, validates the input, uploads the document, and submits the details.",
-      "service_type": "document_operations",
-      "keywords": [
-        "submission",
-        "fitout",
-        "documents",
-        "upload"
-      ],
-      "model": "gpt-4o-mini",
-      "system_prompt": "You are a Fit-Out Document Submission Agent. Your responsibilities: collect document-related inputs, validate file paths and metadata, invoke the document upload tool, handle errors gracefully, and return a final structured JSON response. Do not hallucinate values. Do not proceed unless inputs are valid. Always return JSON.",
-      "fields": [
-        {
-          "key": "file_path",
-          "type": "string",
-          "required": true,
-          "label": "File Path",
-          "hint": "Absolute path to the PDF document to be uploaded",
-          "choices": [],
-          "validator": "file_prompt_validator",
-          "prompt": "check whether the provided file has architectural data or images"
-        },
-        {
-          "key": "file_extension",
-          "type": "string",
-          "required": true,
-          "label": "File Extension",
-          "hint": "Example: pdf",
-          "choices": [],
-          "validator": null,
-          "prompt": null
-        },
-        {
-          "key": "source",
-          "type": "string",
-          "required": true,
-          "label": "Source",
-          "hint": "Example: tenant_central",
-          "choices": [],
-          "validator": null,
-          "prompt": null
-        },
-        {
-          "key": "revised_version",
-          "type": "string",
-          "required": false,
-          "label": "Revised Version",
-          "hint": "yes or no",
-          "choices": [
-            "yes",
-            "no"
-          ],
-          "validator": null,
-          "prompt": null
-        },
-        {
-          "key": "cenomi_contact_name",
-          "type": "string",
-          "required": false,
-          "label": "Contact Name",
-          "hint": "Name of the Cenomi contact",
-          "choices": [],
-          "validator": null,
-          "prompt": null
-        },
-        {
-          "key": "cenomi_contact_role",
-          "type": "string",
-          "required": false,
-          "label": "Contact Role",
-          "hint": "Role/designation of the contact",
-          "choices": [],
-          "validator": null,
-          "prompt": null
-        },
-        {
-          "key": "tenant_profile_id",
-          "type": "number",
-          "required": false,
-          "label": "Tenant Profile ID",
-          "hint": "Optional tenant profile identifier",
-          "choices": [],
-          "validator": null,
-          "prompt": null
-        },
-        {
-          "key": "lease_code",
-          "type": "string",
-          "required": true,
-          "label": "Lease Code",
-          "hint": "Lease reference code",
-          "choices": [],
-          "validator": null,
-          "prompt": null
-        },
-        {
-          "key": "status",
-          "type": "string",
-          "required": true,
-          "label": "Status",
-          "hint": "Current status of the fit-out request",
-          "choices": [],
-          "validator": null,
-          "prompt": null
-        },
-        {
-          "key": "lease_id",
-          "type": "number",
-          "required": false,
-          "label": "Lease ID",
-          "hint": "Optional lease identifier",
-          "choices": [],
-          "validator": null,
-          "prompt": null
-        },
-        {
-          "key": "title",
-          "type": "string",
-          "required": true,
-          "label": "Request Title",
-          "hint": "Title of the fit-out request",
-          "choices": [],
-          "validator": null,
-          "prompt": null
-        },
-        {
-          "key": "comment",
-          "type": "string",
-          "required": true,
-          "label": "Comment",
-          "hint": "Additional comments or notes",
-          "choices": [],
-          "validator": null,
-          "prompt": null
-        },
-        {
-          "key": "category",
-          "type": "string",
-          "required": true,
-          "label": "Category",
-          "hint": "Service request category",
-          "choices": [],
-          "validator": null,
-          "prompt": null
-        },
-        {
-          "key": "subcategory",
-          "type": "string",
-          "required": true,
-          "label": "Subcategory",
-          "hint": "Service request subcategory",
-          "choices": [],
-          "validator": null,
-          "prompt": null
-        }
-      ],
-      "stages": [
-        {
-          "stage_id": "NEW_ENQUIRY",
-          "label": "Collect Personal Information",
-          "required_fields": [
-            "first_name",
-            "last_name",
-            "company",
-            "email",
-            "brand_name",
-            "unit_type",
-            "country_code",
-            "phone",
-            "country_code_landline",
-            "company_address",
-            "unique_property_id",
-            "requested_lease_period",
-            "requested_min_area",
-            "phone_verified"
-          ],
-          "required_tools": [],
-          "optional_tools": [],
-          "submission_tools": [
-            "submit_fitout_request"
-          ]
-        }
-      ],
-      "tools": [
-        "upload_documents"
-      ]
-    },
-    {
       "agent_id": "file_validation_v1",
       "name": "file_validator",
       "description": "Validates whether an uploaded file is relevant",
@@ -428,6 +239,350 @@
         }
       ],
       "tools": []
+    },
+    {
+      "agent_id": "fitout_architectural_drawing_agent",
+      "name": "Fit-Out Architectural Drawing Agent",
+      "description": "Collects required information for fit-out architectural drawing submission, uploads drawings, and submits the service request.",
+      "service_type": "fit_out_drawing_submission",
+      "keywords": [
+        "fit out",
+        "fit-out",
+        "architectural drawing",
+        "layout",
+        "store drawing",
+        "design approval"
+      ],
+      "model": "gpt-4o-mini",
+      "system_prompt": "You are a fit-out drawing submission assistant. Collect required details conversationally to submit an architectural drawing service request. Do not invent values. Some fields have fixed values and should be selected automatically.",
+      "fields": [
+        {
+          "key": "document",
+          "type": "string",
+          "required": true,
+          "label": "Document Link",
+          "hint": null,
+          "choices": [],
+          "validator": null,
+          "prompt": null
+        },
+        {
+          "key": "file_extension",
+          "type": "string",
+          "required": true,
+          "label": "File extension",
+          "hint": null,
+          "choices": [
+            "pdf"
+          ],
+          "validator": null,
+          "prompt": null
+        },
+        {
+          "key": "pms_id",
+          "type": "string",
+          "required": true,
+          "label": "PMS ID",
+          "hint": null,
+          "choices": [
+            "96225"
+          ],
+          "validator": null,
+          "prompt": null
+        },
+        {
+          "key": "pms_tenant_id",
+          "type": "string",
+          "required": true,
+          "label": "PMS tenant ID",
+          "hint": null,
+          "choices": [
+            "t0108240"
+          ],
+          "validator": null,
+          "prompt": null
+        },
+        {
+          "key": "document_type_id",
+          "type": "string",
+          "required": true,
+          "label": "Document type ID",
+          "hint": null,
+          "choices": [
+            "FIT_ARCH_DRW"
+          ],
+          "validator": null,
+          "prompt": null
+        },
+        {
+          "key": "pms_customer_id",
+          "type": "string",
+          "required": true,
+          "label": "PMS customer ID",
+          "hint": null,
+          "choices": [
+            "customer-code"
+          ],
+          "validator": null,
+          "prompt": null
+        },
+        {
+          "key": "process_type_id",
+          "type": "string",
+          "required": true,
+          "label": "Process type ID",
+          "hint": null,
+          "choices": [
+            "2000"
+          ],
+          "validator": null,
+          "prompt": null
+        },
+        {
+          "key": "source",
+          "type": "string",
+          "required": true,
+          "label": "Source",
+          "hint": null,
+          "choices": [
+            "tenant_central"
+          ],
+          "validator": null,
+          "prompt": null
+        },
+        {
+          "key": "revised_version",
+          "type": "string",
+          "required": true,
+          "label": "Revised version",
+          "hint": null,
+          "choices": [
+            "no"
+          ],
+          "validator": null,
+          "prompt": null
+        },
+        {
+          "key": "cenomi_contact_name",
+          "type": "string",
+          "required": true,
+          "label": "Cenomi contact name",
+          "hint": null,
+          "choices": null,
+          "validator": null,
+          "prompt": null
+        },
+        {
+          "key": "cenomi_contact_role",
+          "type": "string",
+          "required": true,
+          "label": "Cenomi contact role",
+          "hint": null,
+          "choices": null,
+          "validator": null,
+          "prompt": null
+        },
+        {
+          "key": "service_category",
+          "type": "string",
+          "required": true,
+          "label": "Service category",
+          "hint": null,
+          "choices": [
+            "FIT_OUT_DRAWING"
+          ],
+          "validator": null,
+          "prompt": null
+        },
+        {
+          "key": "sub_category",
+          "type": "string",
+          "required": true,
+          "label": "Sub category",
+          "hint": null,
+          "choices": [
+            "ARCHITECTURAL_DRAWING"
+          ],
+          "validator": null,
+          "prompt": null
+        },
+        {
+          "key": "drawing_type_obj",
+          "type": "string",
+          "required": true,
+          "label": "Drawing type object",
+          "hint": null,
+          "choices": [
+            "{\"documentType\":\"ARCHITECTURAL_DRAWING\",\"documentTypeId\":\"FIT_ARCH_DRW\",\"document_category_en\":\"Architectural Drawings\",\"documents\":[{\"document_name_en\":\"Architectural Layout\",\"documentTypeId\":\"FIT_ARCH_DRW_ARCH_LAYOUT\",\"status\":\"uploaded\",\"comment\":null}],\"srDetails\":{}}"
+          ],
+          "validator": null,
+          "prompt": null
+        },
+        {
+          "key": "tenant_profile_id",
+          "type": "number",
+          "required": true,
+          "label": "Tenant profile ID",
+          "hint": null,
+          "choices": null,
+          "validator": null,
+          "prompt": null
+        },
+        {
+          "key": "lease_code",
+          "type": "string",
+          "required": true,
+          "label": "Lease code",
+          "hint": null,
+          "choices": null,
+          "validator": null,
+          "prompt": null
+        },
+        {
+          "key": "lease_id",
+          "type": "number",
+          "required": true,
+          "label": "Lease ID",
+          "hint": null,
+          "choices": null,
+          "validator": null,
+          "prompt": null
+        },
+        {
+          "key": "contract_id",
+          "type": "number",
+          "required": true,
+          "label": "Contract ID",
+          "hint": null,
+          "choices": null,
+          "validator": null,
+          "prompt": null
+        },
+        {
+          "key": "property_id",
+          "type": "number",
+          "required": true,
+          "label": "Property ID",
+          "hint": null,
+          "choices": null,
+          "validator": null,
+          "prompt": null
+        },
+        {
+          "key": "mall",
+          "type": "string",
+          "required": true,
+          "label": "Mall name",
+          "hint": null,
+          "choices": null,
+          "validator": null,
+          "prompt": null
+        },
+        {
+          "key": "brand_id",
+          "type": "number",
+          "required": true,
+          "label": "Brand ID",
+          "hint": null,
+          "choices": null,
+          "validator": null,
+          "prompt": null
+        },
+        {
+          "key": "brand_name",
+          "type": "string",
+          "required": true,
+          "label": "Brand name",
+          "hint": null,
+          "choices": null,
+          "validator": null,
+          "prompt": null
+        },
+        {
+          "key": "title",
+          "type": "string",
+          "required": true,
+          "label": "Request title",
+          "hint": null,
+          "choices": null,
+          "validator": null,
+          "prompt": null
+        },
+        {
+          "key": "comment",
+          "type": "string",
+          "required": false,
+          "label": "Additional comments",
+          "hint": null,
+          "choices": null,
+          "validator": null,
+          "prompt": null
+        },
+        {
+          "key": "documents_ids",
+          "type": "array",
+          "required": true,
+          "label": "Uploaded document IDs",
+          "hint": null,
+          "choices": null,
+          "validator": "non_empty_array",
+          "prompt": null
+        },
+        {
+          "key": "status",
+          "type": "string",
+          "required": true,
+          "label": "Request status",
+          "hint": null,
+          "choices": [
+            "SUBMITTED"
+          ],
+          "validator": null,
+          "prompt": null
+        }
+      ],
+      "stages": [
+        {
+          "stage_id": "FITOUT_DRAWING_SUBMISSION",
+          "label": "Collect Details, Upload Document and Submit",
+          "required_fields": [
+            "document",
+            "file_extension",
+            "pms_id",
+            "pms_tenant_id",
+            "document_type_id",
+            "pms_customer_id",
+            "process_type_id",
+            "source",
+            "revised_version",
+            "cenomi_contact_name",
+            "cenomi_contact_role",
+            "service_category",
+            "sub_category",
+            "drawing_type_obj",
+            "tenant_profile_id",
+            "lease_code",
+            "lease_id",
+            "contract_id",
+            "property_id",
+            "mall",
+            "brand_id",
+            "brand_name",
+            "title",
+            "comment",
+            "documents_ids",
+            "status"
+          ],
+          "required_tools": [
+            "upload_fitout_document"
+          ],
+          "optional_tools": []
+        }
+      ],
+      "tools": [
+        "upload_fitout_document",
+        "submit_fitout_request"
+      ]
     }
   ]
 }
