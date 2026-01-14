@@ -541,7 +541,7 @@ async def run_subagent(inputs: dict) -> dict:
                         result = validator_tool.invoke({"field": v, "prompt": prompt})
                     elif validator_name == "file_prompt_validator":
                         validator_tool = get_validator_by_name(validator_name)
-                        prompt = field_spec.get("Prompt") or field_spec.get("hint") or f"valid {field_spec.get('label', k)}"
+                        prompt = field_spec.get("prompt") 
                         result = validator_tool.invoke({"pdf_path": v, "prompt": prompt})
                     else:
                         # For standard validators (email, phone, url, etc.)

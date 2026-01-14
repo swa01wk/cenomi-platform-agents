@@ -360,7 +360,7 @@
           "prompt": null
         }
       ],
-            "stages": [
+      "stages": [
         {
           "stage_id": "NEW_ENQUIRY",
           "label": "Collect Personal Information",
@@ -390,6 +390,44 @@
       "tools": [
         "upload_documents"
       ]
+    },
+    {
+      "agent_id": "file_validation_v1",
+      "name": "file_validator",
+      "description": "Validates whether an uploaded file is relevant",
+      "service_type": "file validation",
+      "keywords": [
+        "validation",
+        "relevancy",
+        "file upload",
+        "file validation"
+      ],
+      "model": "gpt-4o-mini",
+      "system_prompt": "Take the required fields as input from the user and validate the file content.",
+      "fields": [
+        {
+          "key": "file_path",
+          "type": "string",
+          "required": true,
+          "label": "File Path",
+          "hint": "Absolute or relative path to the uploaded file",
+          "choices": null,
+          "validator": "file_prompt_validator",
+          "prompt": "Check whether the document contains architectural information and images"
+        }
+      ],
+      "stages": [
+        {
+          "stage_id": "collection",
+          "label": "Collect the file path",
+          "required_fields": [
+            "file_path"
+          ],
+          "required_tools": [],
+          "optional_tools": []
+        }
+      ],
+      "tools": []
     }
   ]
 }
