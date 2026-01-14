@@ -190,13 +190,15 @@ class ValidationResult(BaseModel):
     score: int = Field(..., description="A validation score from 0 to 100")
 
 def file_prompt_validator_func(pdf_path: str, prompt: str) -> ValidationResult:
-    print("the file validator tool is invoked")
+    
+    # Upload the file first
     with open(pdf_path, "rb") as file:
         uploaded_file = client.files.create(
             file=file,
             purpose="user_data"
         )
     
+    # Use beta.chat.completions.parse for structured output
     response = client.beta.chat.completions.parse(
         model="gpt-4o",
         temperature=0,
@@ -211,7 +213,8 @@ def file_prompt_validator_func(pdf_path: str, prompt: str) -> ValidationResult:
         ],
         response_format=ValidationResult
     )
-    print(f" the fiel_prompt_validator tool response: {response.choices[0].message.parsed}")
+    
+    print(f"the file_prompt_validator tool response: {response.choices[0].message.parsed}")
     return response.choices[0].message.parsed
 
 file_prompt_validator = StructuredTool.from_function(

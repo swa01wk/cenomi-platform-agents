@@ -488,8 +488,7 @@ async def run_subagent(inputs: dict) -> dict:
       "current_stage": str|None,
       "attachments": [str],
       "conversation_history": List[Dict[str, str]],
-      "tool_runner": callable(tool_name, payload)->result,
-      "locked_fields": List[str]  # fields manually edited by user (don't overwrite)
+      "tool_runner": callable(tool_name, payload)->result
     }
     """
     cfg: Dict[str, Any] = inputs["agent_cfg"]
@@ -499,7 +498,6 @@ async def run_subagent(inputs: dict) -> dict:
     attachments: List[str] = inputs.get("attachments") or []
     conversation_history: List[Dict[str, str]] = inputs.get("conversation_history", [])
     tool_runner = inputs["tool_runner"]
-    locked_fields: List[str] = inputs.get("locked_fields", [])
 
     stage_id = compute_stage(cfg, current_stage)
     st = stage_spec(cfg, stage_id)
@@ -521,21 +519,17 @@ async def run_subagent(inputs: dict) -> dict:
 
     # 1) Extract whatever user provided; merge into draft
     validation_issues: List[Dict[str, Any]] = []
-
+    
     if user_text.strip():
         extracted = await extract_fields(cfg, user_text, draft, conversation_history)
         spec_by_key = field_specs(cfg)
-
+        
         for k, v in extracted.items():
             if v is None:
                 continue
             if isinstance(v, str) and not v.strip():
                 continue
-
-            # Skip if field is locked (manually edited by user)
-            if k in locked_fields:
-                continue
-
+            
             # Check if field has a validator
             field_spec = spec_by_key.get(k)
             if field_spec and field_spec.get("validator"):
@@ -547,8 +541,10 @@ async def run_subagent(inputs: dict) -> dict:
                         result = validator_tool.invoke({"field": v, "prompt": prompt})
                     elif validator_name == "file_prompt_validator":
                         validator_tool = get_validator_by_name(validator_name)
-                        prompt = field_spec.get("prompt") 
-                        result = validator_tool.invoke({"pdf_path": v, "prompt": prompt})
+                        prompt = field_spec.get("prompt")  # Add this line
+                        print("Invoking file_prompt_validator with:", extracted.get("file_path"), "the prompt being used is:", prompt, "tool being used:", validator_tool)
+                        result = validator_tool.invoke({"pdf_path": extracted.get("file_path"), "prompt": prompt})
+                        
                     else:
                         # For standard validators (email, phone, url, etc.)
                         validator_tool = get_validator_by_name(validator_name)
