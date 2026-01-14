@@ -94,55 +94,55 @@ async def chat(body: ChatIn):
         "last_tool_events": new_state.get("last_tool_events", []),
     }
 
-@app.post("/v1/chat/stream")
-async def chat_stream(body: ChatIn):
-    """Streaming version of chat endpoint using Server-Sent Events (SSE)"""
-    sid = body.session_id
-    if sid not in SESSIONS:
-        SESSIONS[sid] = default_state(sid)
+# @app.post("/v1/chat/stream")
+# async def chat_stream(body: ChatIn):
+#     """Streaming version of chat endpoint using Server-Sent Events (SSE)"""
+#     sid = body.session_id
+#     if sid not in SESSIONS:
+#         SESSIONS[sid] = default_state(sid)
 
-    state = SESSIONS[sid]
-    state["messages"].append({"role": "user", "content": body.message})
-    state["turn_attachments"] = body.attachments or []
+#     state = SESSIONS[sid]
+#     state["messages"].append({"role": "user", "content": body.message})
+#     state["turn_attachments"] = body.attachments or []
 
-    async def event_generator():
-        """Generate SSE events from LangGraph stream"""
-        final_state = None
+#     async def event_generator():
+#         """Generate SSE events from LangGraph stream"""
+#         final_state = None
 
-        # Stream events from the graph
-        async for event in GRAPH.astream(state):
-            # LangGraph streams events like {"node_name": state_update}
-            for node_name, node_state in event.items():
-                # Send assistant message chunks if available
-                if "assistant_message" in node_state:
-                    msg = node_state.get("assistant_message", "")
-                    if msg:
-                        yield f"data: {json.dumps({'type': 'message', 'content': msg})}\n\n"
+#         # Stream events from the graph
+#         async for event in GRAPH.astream(state):
+#             # LangGraph streams events like {"node_name": state_update}
+#             for node_name, node_state in event.items():
+#                 # Send assistant message chunks if available
+#                 if "assistant_message" in node_state:
+#                     msg = node_state.get("assistant_message", "")
+#                     if msg:
+#                         yield f"data: {json.dumps({'type': 'message', 'content': msg})}\n\n"
 
-                # Update final state
-                final_state = node_state
+#                 # Update final state
+#                 final_state = node_state
 
-        # After streaming completes, send final state
-        if final_state:
-            assistant_msg = final_state.get("assistant_message", "")
-            final_state["messages"].append({"role": "assistant", "content": assistant_msg})
-            final_state["turn_attachments"] = []
-            SESSIONS[sid] = final_state
+#         # After streaming completes, send final state
+#         if final_state:
+#             assistant_msg = final_state.get("assistant_message", "")
+#             final_state["messages"].append({"role": "assistant", "content": assistant_msg})
+#             final_state["turn_attachments"] = []
+#             SESSIONS[sid] = final_state
 
-            # Send complete state as final event
-            yield f"data: {json.dumps({'type': 'complete', 'state': {
-                'phase': final_state.get('phase'),
-                'active_agent_id': final_state.get('active_agent_id'),
-                'drafts': final_state.get('drafts'),
-                'stage_by_agent': final_state.get('stage_by_agent'),
-                'ready_payload': final_state.get('ready_payload'),
-                'submitted': final_state.get('submitted'),
-                'last_tool_events': final_state.get('last_tool_events', []),
-            }})}\n\n"
+#             # Send complete state as final event
+#             yield f"data: {json.dumps({'type': 'complete', 'state': {
+#                 'phase': final_state.get('phase'),
+#                 'active_agent_id': final_state.get('active_agent_id'),
+#                 'drafts': final_state.get('drafts'),
+#                 'stage_by_agent': final_state.get('stage_by_agent'),
+#                 'ready_payload': final_state.get('ready_payload'),
+#                 'submitted': final_state.get('submitted'),
+#                 'last_tool_events': final_state.get('last_tool_events', []),
+#             }})}\n\n"
 
-        yield "data: [DONE]\n\n"
+#         yield "data: [DONE]\n\n"
 
-    return StreamingResponse(event_generator(), media_type="text/event-stream")
+#     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 @app.post("/v1/draft/update")
 async def update_draft(body: UpdateDraftIn):
