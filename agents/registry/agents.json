@@ -201,6 +201,195 @@
       "tools": [
         "create_lead_enquiry"
       ]
+    },
+    {
+      "agent_id": "fit_out_agent_v1",
+      "name": "fit_out_agent",
+      "description": "Accepts documents and relevant details of the documents as input, validates the input, uploads the document, and submits the details.",
+      "service_type": "document_operations",
+      "keywords": [
+        "submission",
+        "fitout",
+        "documents",
+        "upload"
+      ],
+      "model": "gpt-4o-mini",
+      "system_prompt": "You are a Fit-Out Document Submission Agent. Your responsibilities: collect document-related inputs, validate file paths and metadata, invoke the document upload tool, handle errors gracefully, and return a final structured JSON response. Do not hallucinate values. Do not proceed unless inputs are valid. Always return JSON.",
+      "fields": [
+        {
+          "key": "file_path",
+          "type": "string",
+          "required": true,
+          "label": "File Path",
+          "hint": "Absolute path to the PDF document to be uploaded",
+          "choices": [],
+          "validator": "file_prompt_validator",
+          "prompt": "check whether the provided file has architectural data or images"
+        },
+        {
+          "key": "file_extension",
+          "type": "string",
+          "required": true,
+          "label": "File Extension",
+          "hint": "Example: pdf",
+          "choices": [],
+          "validator": null,
+          "prompt": null
+        },
+        {
+          "key": "source",
+          "type": "string",
+          "required": true,
+          "label": "Source",
+          "hint": "Example: tenant_central",
+          "choices": [],
+          "validator": null,
+          "prompt": null
+        },
+        {
+          "key": "revised_version",
+          "type": "string",
+          "required": false,
+          "label": "Revised Version",
+          "hint": "yes or no",
+          "choices": [
+            "yes",
+            "no"
+          ],
+          "validator": null,
+          "prompt": null
+        },
+        {
+          "key": "cenomi_contact_name",
+          "type": "string",
+          "required": false,
+          "label": "Contact Name",
+          "hint": "Name of the Cenomi contact",
+          "choices": [],
+          "validator": null,
+          "prompt": null
+        },
+        {
+          "key": "cenomi_contact_role",
+          "type": "string",
+          "required": false,
+          "label": "Contact Role",
+          "hint": "Role/designation of the contact",
+          "choices": [],
+          "validator": null,
+          "prompt": null
+        },
+        {
+          "key": "tenant_profile_id",
+          "type": "number",
+          "required": false,
+          "label": "Tenant Profile ID",
+          "hint": "Optional tenant profile identifier",
+          "choices": [],
+          "validator": null,
+          "prompt": null
+        },
+        {
+          "key": "lease_code",
+          "type": "string",
+          "required": true,
+          "label": "Lease Code",
+          "hint": "Lease reference code",
+          "choices": [],
+          "validator": null,
+          "prompt": null
+        },
+        {
+          "key": "status",
+          "type": "string",
+          "required": true,
+          "label": "Status",
+          "hint": "Current status of the fit-out request",
+          "choices": [],
+          "validator": null,
+          "prompt": null
+        },
+        {
+          "key": "lease_id",
+          "type": "number",
+          "required": false,
+          "label": "Lease ID",
+          "hint": "Optional lease identifier",
+          "choices": [],
+          "validator": null,
+          "prompt": null
+        },
+        {
+          "key": "title",
+          "type": "string",
+          "required": true,
+          "label": "Request Title",
+          "hint": "Title of the fit-out request",
+          "choices": [],
+          "validator": null,
+          "prompt": null
+        },
+        {
+          "key": "comment",
+          "type": "string",
+          "required": true,
+          "label": "Comment",
+          "hint": "Additional comments or notes",
+          "choices": [],
+          "validator": null,
+          "prompt": null
+        },
+        {
+          "key": "category",
+          "type": "string",
+          "required": true,
+          "label": "Category",
+          "hint": "Service request category",
+          "choices": [],
+          "validator": null,
+          "prompt": null
+        },
+        {
+          "key": "subcategory",
+          "type": "string",
+          "required": true,
+          "label": "Subcategory",
+          "hint": "Service request subcategory",
+          "choices": [],
+          "validator": null,
+          "prompt": null
+        }
+      ],
+            "stages": [
+        {
+          "stage_id": "NEW_ENQUIRY",
+          "label": "Collect Personal Information",
+          "required_fields": [
+            "first_name",
+            "last_name",
+            "company",
+            "email",
+            "brand_name",
+            "unit_type",
+            "country_code",
+            "phone",
+            "country_code_landline",
+            "company_address",
+            "unique_property_id",
+            "requested_lease_period",
+            "requested_min_area",
+            "phone_verified"
+          ],
+          "required_tools": [],
+          "optional_tools": [],
+          "submission_tools": [
+            "submit_fitout_request"
+          ]
+        }
+      ],
+      "tools": [
+        "upload_documents"
+      ]
     }
   ]
 }
