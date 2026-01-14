@@ -220,6 +220,69 @@ file_prompt_validator = StructuredTool.from_function(
 )
 
 # =========================================================
+# 7 file prompt Validator Tool
+# =========================================================
+
+import boto3
+import io
+from langchain_core.tools import StructuredTool
+from pydantic import BaseModel, Field
+from openai import OpenAI
+from typing import Dict
+
+client = OpenAI()
+# Initialize S3 client
+s3_client = boto3.client('s3')
+
+class S3FilePromptInput(BaseModel):
+    s3_url: str = Field(..., description="The S3 URL (e.g., s3://bucket-name/path/to.pdf)")
+    prompt: str = Field(..., description="Prompt to analyze the PDF")
+
+class ValidationResult(BaseModel):
+    score: int = Field(..., description="A validation score from 0 to 100")
+
+def s3_file_prompt_validator_func(s3_url: str, prompt: str) -> ValidationResult:
+    # 1. Parse S3 URL (assuming format s3://bucket/key)
+    path_parts = s3_url.replace("s3://", "").split("/", 1)
+    bucket = path_parts[0]
+    key = path_parts[1]
+
+    # 2. Download file into memory
+    file_stream = io.BytesIO()
+    s3_client.download_fileobj(bucket, key, file_stream)
+    file_stream.seek(0) # Reset stream position
+
+    # 3. Upload to OpenAI (providing a filename is required for the API)
+    uploaded_file = client.files.create(
+        file=(key.split('/')[-1], file_stream), 
+        purpose="user_data"
+    )
+
+    # 4. Standard completion call
+    response = client.beta.chat.completions.parse(
+        model="gpt-4o",
+        temperature=0,
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": f"You are a PDF validation agent. Prompt: {prompt}"},
+                    {"type": "file", "file": {"file_id": uploaded_file.id}},
+                ]
+            }
+        ],
+        response_format=ValidationResult
+    )
+    return response.choices[0].message.parsed
+
+file_prompt_validator = StructuredTool.from_function(
+    name="s3_pdf_prompt_validator",
+    description="Analyzes a PDF stored in S3 based on a prompt and returns a score.",
+    func=s3_file_prompt_validator_func,
+    args_schema=S3FilePromptInput,
+)
+
+# =========================================================
 # 🧠 TOOL REGISTRY (tool_id → tool)
 # =========================================================
 

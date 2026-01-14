@@ -135,7 +135,6 @@ async def save_draft_general_enquiry(payload: Dict[str, Any]) -> Dict[str, Any]:
         "status": "DRAFT"
     }
 
-
 async def submit_general_enquiry(payload: Dict[str, Any]) -> Dict[str, Any]:
     """Submit general enquiry."""
     # Simulate async I/O (database write/submission)
@@ -145,7 +144,6 @@ async def submit_general_enquiry(payload: Dict[str, Any]) -> Dict[str, Any]:
         "request_id": f"REQ-{uuid.uuid4().hex[:8].upper()}",
         "status": "SUBMITTED"
     }
-
 
 # ============================================================================
 # CUSTOM FUNCTIONS REGISTRY
@@ -166,7 +164,6 @@ CUSTOM_FUNCTIONS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "save_draft_general_enquiry": save_draft_general_enquiry,
     "submit_general_enquiry": submit_general_enquiry,
 }
-
 
 # ============================================================================
 # HELPER FUNCTIONS
