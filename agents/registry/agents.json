@@ -257,16 +257,6 @@
       "system_prompt": "You are a fit-out drawing submission assistant. Collect required details conversationally to submit an architectural drawing service request. Do not invent values. Some fields have fixed values and should be selected automatically.",
       "fields": [
         {
-          "key": "document",
-          "type": "string",
-          "required": true,
-          "label": "Document Link",
-          "hint": null,
-          "choices": [],
-          "validator": null,
-          "prompt": null
-        },
-        {
           "key": "file_extension",
           "type": "string",
           "required": true,
@@ -275,6 +265,16 @@
           "choices": [
             "pdf"
           ],
+          "validator": null,
+          "prompt": null
+        },
+        {
+          "key": "request_id",
+          "type": "string",
+          "required": true,
+          "label": "Request ID",
+          "hint": "Unique identifier for the request",
+          "choices": null,
           "validator": null,
           "prompt": null
         },
@@ -303,18 +303,6 @@
           "prompt": null
         },
         {
-          "key": "document_type_id",
-          "type": "string",
-          "required": true,
-          "label": "Document type ID",
-          "hint": null,
-          "choices": [
-            "FIT_ARCH_DRW"
-          ],
-          "validator": null,
-          "prompt": null
-        },
-        {
           "key": "pms_customer_id",
           "type": "string",
           "required": true,
@@ -322,6 +310,18 @@
           "hint": null,
           "choices": [
             "customer-code"
+          ],
+          "validator": null,
+          "prompt": null
+        },
+        {
+          "key": "document_type_id",
+          "type": "string",
+          "required": true,
+          "label": "Document type ID",
+          "hint": null,
+          "choices": [
+            "FIT_ARCH_DRW"
           ],
           "validator": null,
           "prompt": null
@@ -381,6 +381,16 @@
           "choices": null,
           "validator": null,
           "prompt": null
+        },
+        {
+          "key": "file_path",
+          "type": "string",
+          "required": true,
+          "label": "File Path",
+          "hint": "Path to the PDF file to upload",
+          "choices": null,
+          "validator": "file_prompt_validator",
+          "prompt": "Check whether the document contains information about the data guidelines and pipelines"
         },
         {
           "key": "service_category",
@@ -546,17 +556,18 @@
           "stage_id": "FITOUT_DRAWING_SUBMISSION",
           "label": "Collect Details, Upload Document and Submit",
           "required_fields": [
-            "document",
             "file_extension",
+            "request_id",
             "pms_id",
             "pms_tenant_id",
-            "document_type_id",
             "pms_customer_id",
+            "document_type_id",
             "process_type_id",
             "source",
             "revised_version",
             "cenomi_contact_name",
             "cenomi_contact_role",
+            "file_path",
             "service_category",
             "sub_category",
             "drawing_type_obj",

@@ -689,12 +689,90 @@ async def run_subagent(inputs: dict) -> dict:
 
     # 3) Stage valid -> run required tools
     for tool_name in (st.get("required_tools") or []):
-        result = await tool_runner(tool_name, {"agent_id": cfg["agent_id"], "service_type": cfg.get("service_type"), **draft})
-        tool_events.append({"tool": tool_name, "result": result})
-        if isinstance(result, dict):
-            for k in ("lead_id", "request_id", "draft_id", "status"):
-                if k in result and result[k]:
-                    draft[k] = result[k]
+        # Special handling for upload_fitout_document tool
+        if tool_name == "upload_fitout_document":
+            # Check if file_path exists and was validated
+            if not draft.get("file_path"):
+                # File not uploaded yet, ask for it
+                q = "Please upload the architectural drawing document (PDF format) to proceed with the submission."
+                return {
+                    "status": "needs_user_input",
+                    "question": q,
+                    "draft": draft,
+                    "stage_id": stage_id,
+                    "tool_events": tool_events,
+                }
+            
+            # Prepare parameters for upload_document tool
+            upload_params = {
+                "file_path": draft.get("file_path"),
+                "file_extension": draft.get("file_extension", "pdf"),
+                "request_id": draft.get("request_id"),
+                "pms_id": draft.get("pms_id"),
+                "pms_tenant_id": draft.get("pms_tenant_id"),
+                "pms_customer_id": draft.get("pms_customer_id"),
+                "document_type_id": draft.get("document_type_id"),
+                "process_type_id": draft.get("process_type_id"),
+                "source": draft.get("source"),
+                "revised_version": draft.get("revised_version"),
+                "cenomi_contact_name": draft.get("cenomi_contact_name"),
+                "cenomi_contact_role": draft.get("cenomi_contact_role"),
+            }
+            
+            # Call the upload_document tool directly
+            try:
+                from src.tool_registry.prebuilt_tools import upload_document
+                result = upload_document(**upload_params)
+                tool_events.append({"tool": tool_name, "result": result})
+                
+                # Check if upload was successful
+                if isinstance(result, dict):
+                    if "error" in result:
+                        # Upload failed, inform user
+                        error_details = f"Document upload failed: {result.get('error')}"
+                        system = (
+                            "You are a friendly assistant helping a user with document upload. "
+                            "Be conversational, polite, and brief. "
+                            "Explain that the upload failed and ask them to try uploading again."
+                        )
+                        user_prompt = f"The document upload encountered an error: {error_details}\n\nWrite a friendly message asking them to try uploading again."
+                        q = await llm_phrase(cfg.get("model"), system, user_prompt)
+                        return {
+                            "status": "needs_user_input",
+                            "question": q,
+                            "draft": draft,
+                            "stage_id": stage_id,
+                            "tool_events": tool_events,
+                        }
+                    else:
+                        # Upload successful, store document ID if available
+                        if "document_id" in result or "id" in result:
+                            draft["document_id"] = result.get("document_id") or result.get("id")
+                        draft["upload_status"] = "success"
+            except Exception as e:
+                error_details = str(e)
+                system = (
+                    "You are a friendly assistant helping a user with document upload. "
+                    "Be conversational, polite, and brief. "
+                    "Explain that the upload failed and ask them to try again."
+                )
+                user_prompt = f"The document upload encountered an error: {error_details}\n\nWrite a friendly message asking them to try uploading again."
+                q = await llm_phrase(cfg.get("model"), system, user_prompt)
+                return {
+                    "status": "needs_user_input",
+                    "question": q,
+                    "draft": draft,
+                    "stage_id": stage_id,
+                    "tool_events": tool_events,
+                }
+        else:
+            # Regular tool execution
+            result = await tool_runner(tool_name, {"agent_id": cfg["agent_id"], "service_type": cfg.get("service_type"), **draft})
+            tool_events.append({"tool": tool_name, "result": result})
+            if isinstance(result, dict):
+                for k in ("lead_id", "request_id", "draft_id", "status", "document_id"):
+                    if k in result and result[k]:
+                        draft[k] = result[k]
 
     # Optional tools
     for tool_name in (st.get("optional_tools") or []):

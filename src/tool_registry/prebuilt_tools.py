@@ -225,6 +225,66 @@ file_prompt_validator = StructuredTool.from_function(
 )
 
 # =========================================================
+# 7 file prompt Validator Tool
+# =========================================================
+import requests
+from typing import Optional
+
+def upload_document(
+    file_path: str,
+    file_extension: str,
+    request_id: str,
+    pms_id: str,
+    pms_tenant_id: str,
+    pms_customer_id: str,
+    document_type_id: str,
+    process_type_id: str,
+    source: str,
+    revised_version: str,
+    cenomi_contact_name: str,
+    cenomi_contact_role: str,
+    uri: str = "http://20.224.157.137:8000/v1/documents",
+) -> dict:
+    print(f"upload documents invoked")
+    # Prepare the files for upload
+    with open(file_path, 'rb') as f:
+        files = {
+            'document': (file_path.split('\\')[-1], f, 'application/pdf')
+        }
+        
+        # Prepare the form data
+        data = {
+            'file_extension': file_extension,
+            'request_id': request_id,
+            'pms_id': pms_id,
+            'pms_tenant_id': pms_tenant_id,
+            'pms_customer_id': pms_customer_id,
+            'document_type_id': document_type_id,
+            'process_type_id': process_type_id,
+            'source': source,
+            'revised_version': revised_version,
+            'cenomi_contact_name': cenomi_contact_name,
+            'cenomi_contact_role': cenomi_contact_role
+        }
+        
+        # Make the POST request
+        try:
+            response = requests.post(uri, files=files, data=data)
+            response.raise_for_status()
+            print(f"Document uploaded successfully.{response}")
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {
+                "error": str(e),
+                "status_code": getattr(e.response, 'status_code', None) if hasattr(e, 'response') else None
+            }
+            
+upload_document_tool = StructuredTool.from_function(
+    name="upload_document",
+    description="Uploads a document to the specified URI with associated metadata.",
+    func=upload_document,
+)
+# =========================================================
 # 🧠 TOOL REGISTRY (tool_id → tool)
 # =========================================================
 
@@ -235,6 +295,8 @@ TOOL_REGISTRY = {
     "tool_c78a0e62-b6c1-49cf-9e5b-33f2cde54a77": password_strength_tool,
     "tool_2aee9e7a-7d67-4f13-9f91-bd7bb91e84fd": url_validator_tool,
     "tool_8f4e2d3a-5c6b-4e2f-9f1a-123456789abc": file_prompt_validator,
+    "tool_9a7b6c5d-4e3f-2a1b-0c9d-8e7f6a5b4c3d": field_prompt_validator,
+    "tool_dfafafad-adfa-adfa-adfa-dfadfadfadfa": upload_document_tool,
 }
 # =========================================================
 # 🔎 Fetch Tool by ID
