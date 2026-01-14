@@ -12,6 +12,7 @@ class AppState(TypedDict, total=False):
 
     drafts: Dict[str, Dict[str, Any]]          # draft per agent_id
     stage_by_agent: Dict[str, str]             # current stage per agent_id (multi-stage)
+    locked_fields: Dict[str, List[str]]        # fields manually edited by user per agent_id
 
     ready_payload: Optional[Dict[str, Any]]
     assistant_message: str
