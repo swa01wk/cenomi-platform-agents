@@ -4,3 +4,4 @@ __pycache__/
 *.pyc
 .env
 C:/github_work/cenomi-platform-agents/src/tool_registry/notebooks/*
+*.pdf
