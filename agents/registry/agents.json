@@ -45,7 +45,7 @@
           "required": true,
           "label": "Company name",
           "hint": null,
-          "choices": [],
+          "choices": ["Flormar Trap"],
           "validator": null,
           "prompt": null
         },
@@ -65,7 +65,7 @@
           "required": true,
           "label": "Brand name",
           "hint": null,
-          "choices": [],
+          "choices": ["Flormar Trap"],
           "validator": null,
           "prompt": null
         },
@@ -91,7 +91,7 @@
           "required": true,
           "label": "Country code for phone",
           "hint": "e.g., +966 for Saudi Arabia",
-          "choices": [],
+          "choices": ["+966"],
           "validator": null,
           "prompt": null
         },
@@ -100,7 +100,7 @@
           "type": "string",
           "required": true,
           "label": "Phone number",
-          "hint": "Without country code",
+          "hint": null,
           "choices": [],
           "validator": "phone_validator",
           "prompt": null
@@ -110,8 +110,8 @@
           "type": "string",
           "required": false,
           "label": "Country code for landline",
-          "hint": "e.g., +966 for Saudi Arabia",
-          "choices": [],
+          "hint": null,
+          "choices": ["+966"],
           "validator": null,
           "prompt": null
         },
@@ -121,7 +121,7 @@
           "required": true,
           "label": "Company address",
           "hint": null,
-          "choices": [],
+          "choices": ["Dubai"],
           "validator": null,
           "prompt": null
         },
@@ -142,10 +142,7 @@
           "label": "Requested lease period",
           "hint": null,
           "choices": [
-            "1_year",
-            "2_years",
-            "3_years",
-            "5_years"
+            "1_year"
           ],
           "validator": null,
           "prompt": null

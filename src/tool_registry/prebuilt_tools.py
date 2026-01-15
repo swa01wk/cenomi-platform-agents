@@ -38,7 +38,7 @@ email_validator_tool = StructuredTool.from_function(
 # =========================================================
 
 class PhoneValidatorInput(BaseModel):
-    phone: str = Field(..., description="Indian phone number")
+    phone: str = Field(..., description="Phone number")
 
 def validate_phone(phone: str) -> Dict:    
     if re.match(r"^[6-9]\d{9}$", phone):
@@ -47,7 +47,7 @@ def validate_phone(phone: str) -> Dict:
 
 phone_validator_tool = StructuredTool.from_function(
     name="phone_validator",
-    description="Validate Indian phone numbers",
+    description="Validate all phone numbers",
     func=validate_phone,
     args_schema=PhoneValidatorInput,
 )
