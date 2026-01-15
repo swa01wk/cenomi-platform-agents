@@ -2,6 +2,7 @@ import os
 import re
 import asyncio
 from typing import Any, Dict, List, Optional, Tuple
+from pathlib import Path
 
 from pydantic import Field, create_model
 from langchain_openai import ChatOpenAI
@@ -575,6 +576,8 @@ async def run_subagent(inputs: dict) -> dict:
                 else:
                     verdict = f"The document has been successfully validated with a score of {result.score}."
                     print(verdict)
+                    # Store success message in draft for LLM to communicate
+                    draft["file_validation_status"] = verdict
             except Exception as e:
                 validation_issues.append({
                     "key": "file_path",
@@ -584,6 +587,25 @@ async def run_subagent(inputs: dict) -> dict:
                 })
                 # Remove file_path from draft on error
                 draft.pop("file_path", None)
+
+    # 0.6) If file validation found issues, return immediately (no need to continue)
+    if validation_issues:
+        error_details = "\n".join([f"- {issue['label']}: {issue['message']}" for issue in validation_issues])
+        system = (
+            "You are a friendly assistant helping a user with document validation. "
+            "Be conversational, polite, and brief. "
+            "Explain that the document failed validation and ask them to upload a better quality document. "
+            "Keep it to 1-2 sentences."
+        )
+        user_prompt = f"The user uploaded a document but it failed validation:\n{error_details}\n\nWrite a friendly message asking them to upload a better quality document that meets the requirements."
+        q = await llm_phrase(cfg.get("model"), system, user_prompt)
+        return {
+            "status": "needs_user_input",
+            "question": q,
+            "draft": draft,
+            "stage_id": stage_id,
+            "tool_events": tool_events,
+        }
 
     # 1) Extract whatever user provided; merge into draft
     
@@ -601,33 +623,12 @@ async def run_subagent(inputs: dict) -> dict:
             field_spec = spec_by_key.get(k)
             if field_spec and field_spec.get("validator"):
                 validator_name = field_spec["validator"]
-                try:
-                    if validator_name == "field_prompt_validator":
-                        validator_tool = get_validator_by_name(validator_name)
-                        prompt = field_spec.get("prompt")
-                        result = validator_tool.invoke({"field": v, "prompt": prompt})
-                    elif validator_name == "file_prompt_validator" and extracted.get("file_path"):
-                        validator_tool = get_validator_by_name(validator_name)
-                        prompt = field_spec.get("prompt")
-                        print("Invoking file_prompt_validator with:", extracted.get("file_path"), "the prompt being used is:", prompt, "tool being used:", validator_tool)
-                        result = validator_tool.invoke({"pdf_path": extracted.get("file_path"), "prompt": prompt})
-                        
-                        # Check verdict based on score
-                        if result.score < 50:
-                            verdict = f"The document provided has scored {result.score} which is below the acceptable threshold of 50. Please provide a clearer document."
-                            print(verdict)
-                            # Add to validation issues and skip storing the path
-                            validation_issues.append({
-                                "key": k,
-                                "kind": "invalid",
-                                "message": verdict,
-                                "label": friendly_label(cfg, k)
-                            })
-                            continue
-                        else:
-                            verdict = f"The document has been successfully validated with a score of {result.score}."
-                            print(verdict)
-                    else:   
+                
+                # Skip file_prompt_validator as it's already handled in section 0.5
+                if validator_name == "file_prompt_validator":
+                    pass  # Already validated in section 0.5, skip duplicate validation
+                else:
+                    try:
                         # For standard validators (email, phone, url, etc.)
                         validator_tool = get_validator_by_name(validator_name)
                         
@@ -638,30 +639,30 @@ async def run_subagent(inputs: dict) -> dict:
                         else:
                             # No schema - pass value directly
                             result = validator_tool.invoke(v)
-                    
-                    # If validation fails, add to issues and skip storing
-                    if isinstance(result, dict) and not result.get("valid", True):
-                        reason = result.get("reason", "Validation failed")
+                        
+                        # If validation fails, add to issues and skip storing
+                        if isinstance(result, dict) and not result.get("valid", True):
+                            reason = result.get("reason", "Validation failed")
+                            validation_issues.append({
+                                "key": k,
+                                "kind": "invalid",
+                                "message": reason,
+                                "label": friendly_label(cfg, k)
+                            })
+                            continue
+
+                        # If phone validation passed, set phone_verified to True
+                        if k == "phone" and validator_name == "phone_validator":
+                            draft["phone_verified"] = True
+
+                    except Exception as e:
                         validation_issues.append({
                             "key": k,
                             "kind": "invalid",
-                            "message": reason,
+                            "message": f"Validation error: {str(e)}",
                             "label": friendly_label(cfg, k)
                         })
                         continue
-
-                    # If phone validation passed, set phone_verified to True
-                    if k == "phone" and validator_name == "phone_validator":
-                        draft["phone_verified"] = True
-
-                except Exception as e:
-                    validation_issues.append({
-                        "key": k,
-                        "kind": "invalid",
-                        "message": f"Validation error: {str(e)}",
-                        "label": friendly_label(cfg, k)
-                    })
-                    continue
 
             draft[k] = v
 
@@ -763,6 +764,21 @@ async def run_subagent(inputs: dict) -> dict:
                         if "document_id" in result or "id" in result:
                             draft["document_id"] = result.get("document_id") or result.get("id")
                         draft["upload_status"] = "success"
+                        # Store success message for LLM to communicate
+                        upload_msg = result.get("data", {}).get("message", "Document uploaded successfully")
+                        draft["upload_message"] = f"Great news! {upload_msg}. Document ID: {draft.get('document_id')}"
+                        
+                        # Delete temporary file after successful upload
+                        temp_file_path = draft.get("file_path")
+                        if temp_file_path and os.path.exists(temp_file_path):
+                            try:
+                                os.remove(temp_file_path)
+                                print(f"Deleted temporary file: {temp_file_path}")
+                            except Exception as e:
+                                print(f"Warning: Could not delete temporary file {temp_file_path}: {e}")
+                        
+                        # Remove file_path from draft to prevent re-uploads and stop storing attachments
+                        draft.pop("file_path", None)
             except Exception as e:
                 error_details = str(e)
                 print(f"error{error_details}")
