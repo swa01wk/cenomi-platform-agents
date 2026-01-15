@@ -237,7 +237,7 @@
           "label": "Request ID",
           "hint": "Unique identifier for the request",
           "choices": [
-            "30dd879c-ee2f-11db-8314-0800200c9a66"
+            "test-request-123"
           ],
           "validator": null,
           "prompt": null
@@ -575,7 +575,10 @@
           "required_tools": [
             "upload_fitout_document"
           ],
-          "optional_tools": []
+          "optional_tools": [],
+          "submission_tools": [
+            "submit_fitout_request"
+          ]
         }
       ],
       "tools": [

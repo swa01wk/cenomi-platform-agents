@@ -1,9 +1,11 @@
 import uuid
 import json
-from typing import Dict, Optional, List, Any
-from fastapi import FastAPI
+import shutil
+from pathlib import Path
+from typing import Dict, Optional, Any
+from fastapi import FastAPI, UploadFile, File, HTTPException, Request, Form
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from dotenv import load_dotenv
 
 from src.admin.routes import router as admin_router
@@ -20,6 +22,8 @@ app.include_router(admin_router)
 app.include_router(tool_router)
 
 SESSIONS: Dict[str, AppState] = {}
+UPLOAD_DIR = Path("temp_uploads")
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 registry_store = AgentRegistryStore()
 toolreg = ToolRegistry()
@@ -55,7 +59,6 @@ async def create_session():
 class ChatIn(BaseModel):
     session_id: str
     message: str
-    attachments: Optional[List[str]] = Field(default=None, description="Optional list of uploaded file references")
 
 class UpdateDraftIn(BaseModel):
     session_id: str
@@ -63,16 +66,49 @@ class UpdateDraftIn(BaseModel):
     field: str
     value: Any
 
+async def store_upload(file: UploadFile) -> str:
+    attachment_id = uuid.uuid4().hex
+    original_name = file.filename or "upload"
+    ext = Path(original_name).suffix
+    stored_name = f"{attachment_id}{ext}"
+    stored_path = UPLOAD_DIR / stored_name
+
+    try:
+        with stored_path.open("wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+    finally:
+        await file.close()
+
+    return str(stored_path)
+
 @app.post("/v1/chat")
-async def chat(body: ChatIn):
-    sid = body.session_id
+async def chat(
+    request: Request,
+    session_id: Optional[str] = Form(default=None),
+    message: Optional[str] = Form(default=None),
+    file: Optional[UploadFile] = File(default=None),
+):
+    payload: Optional[ChatIn] = None
+    if request.headers.get("content-type", "").startswith("application/json"):
+        data = await request.json()
+        payload = ChatIn(**data)
+    else:
+        if session_id is None or message is None:
+            raise HTTPException(status_code=400, detail="session_id and message are required")
+        payload = ChatIn(session_id=session_id, message=message)
+
+    sid = payload.session_id
     if sid not in SESSIONS:
         SESSIONS[sid] = default_state(sid)
 
     state = SESSIONS[sid]
-    state["messages"].append({"role": "user", "content": body.message})
+    state["messages"].append({"role": "user", "content": payload.message})
     # Attachments are stored separately in state for this turn
-    state["turn_attachments"] = body.attachments or []
+    if file is not None:
+        stored_path = await store_upload(file)
+        state["turn_attachments"] = [stored_path]
+    else:
+        state["turn_attachments"] = []
 
     new_state = await GRAPH.ainvoke(state)
 
@@ -103,7 +139,7 @@ async def chat(body: ChatIn):
 
 #     state = SESSIONS[sid]
 #     state["messages"].append({"role": "user", "content": body.message})
-#     state["turn_attachments"] = body.attachments or []
+#     state["turn_attachments"] = []
 
 #     async def event_generator():
 #         """Generate SSE events from LangGraph stream"""

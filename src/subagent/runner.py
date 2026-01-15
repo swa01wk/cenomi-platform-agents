@@ -11,6 +11,7 @@ from langgraph.checkpoint.memory import InMemorySaver
 
 from src.messages.generators import generate_validation_message, generate_confirmation_message
 from src.tool_registry.prebuilt_tools import get_validator_by_name
+from src.tool_registry.prebuilt_tools import get_tool_by_id
 MODEL_DEFAULT = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
 # OpenAI rate limiting: max 5 concurrent LLM calls to prevent quota exhaustion
@@ -732,8 +733,10 @@ async def run_subagent(inputs: dict) -> dict:
             
             # Call the upload_document tool directly
             try:
-                from src.tool_registry.prebuilt_tools import upload_document
-                result = upload_document(**upload_params)
+                upload_document_tool = get_tool_by_id("tool_dfafafad-adfa-adfa-adfa-dfadfadfadfa")
+                print("upload_document_tool:", upload_document_tool,"Invoking upload_document_tool with params:", upload_params)
+                result = upload_document_tool.invoke(upload_params)
+                print("result from upload_document_tool:", result)
                 tool_events.append({"tool": tool_name, "result": result})
                 
                 # Check if upload was successful
@@ -762,6 +765,7 @@ async def run_subagent(inputs: dict) -> dict:
                         draft["upload_status"] = "success"
             except Exception as e:
                 error_details = str(e)
+                print(f"error{error_details}")
                 system = (
                     "You are a friendly assistant helping a user with document upload. "
                     "Be conversational, polite, and brief. "
