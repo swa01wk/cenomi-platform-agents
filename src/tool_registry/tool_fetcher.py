@@ -47,9 +47,9 @@ def _custom_api_placeholder(tool_def: Dict[str, Any]) -> List:
             kwargs.pop("_placeholder", None)
             
             if api_request_type.upper() == "GET":
-                resp = requests.get(api_url, params=kwargs, timeout=10)
+                resp = requests.get(api_url, params=kwargs, timeout=360)
             else:
-                resp = requests.post(api_url, json=kwargs, timeout=10)
+                resp = requests.post(api_url, json=kwargs, timeout=360)
             
             return {
                 "status_code": resp.status_code,

@@ -176,7 +176,7 @@ class ToolRegistry:
             try:
                 async with aiohttp.ClientSession() as session:
                     if api_request_type.upper() == "GET":
-                        async with session.get(api_url, params=params, timeout=10) as resp:
+                        async with session.get(api_url, params=params, timeout=360) as resp:
                             data = await resp.json() if resp.content_type == 'application/json' else {}
                             return {
                                 "status_code": resp.status,
@@ -184,7 +184,7 @@ class ToolRegistry:
                                 "custom_message": custom_message
                             }
                     else:  # POST
-                        async with session.post(api_url, json=params, timeout=10) as resp:
+                        async with session.post(api_url, json=params, timeout=360) as resp:
                             data = await resp.json() if resp.content_type == 'application/json' else {}
                             return {
                                 "status_code": resp.status,

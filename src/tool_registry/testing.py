@@ -13,7 +13,7 @@ class CenomiAPIClient:
     Centralized async client for Cenomi backend APIs.
     """
 
-    def __init__(self, base_url: str, timeout: int = 60):
+    def __init__(self, base_url: str, timeout: int = 360):
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
 
